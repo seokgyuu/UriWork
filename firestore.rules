@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 모든 컬렉션에 대해 인증된 사용자와 서비스 계정 허용
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // 사용자 컬렉션에 대한 명시적 규칙
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 직원 선호도 컬렉션에 대한 명시적 규칙
+    match /employee_preferences/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // 부서 정보 컬렉션에 대한 명시적 규칙
+    match /departments/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+} 
