@@ -25,3 +25,4 @@ dist-ssr
 .env
 backend/.env
 backend/serviceAccountKey.json
+ios/App/App/GoogleService-Info.plist
