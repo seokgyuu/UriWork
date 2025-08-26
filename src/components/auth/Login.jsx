@@ -43,8 +43,29 @@ const Login = () => {
       // 약간의 지연을 두고 네비게이션 (상태 안정화를 위해)
       const timer = setTimeout(() => {
         console.log('Login: 네비게이션 시작 - /user-type으로 이동');
-        navigate('/user-type');
-      }, 2000); // 지연 시간 증가
+        
+        try {
+          navigate('/user-type');
+          console.log('Login: useEffect에서 네비게이션 성공');
+          
+          // UserTypeSelection으로 이동 후 currentUser를 null로 설정하여 무한 루프 방지
+          setTimeout(() => {
+            if (window.__FIREBASE_DEBUG__) {
+              window.__FIREBASE_DEBUG__.currentUser = null;
+              console.log('Login: 전역 상태에서 currentUser 제거 (무한 루프 방지)');
+            }
+          }, 100);
+          
+        } catch (navError) {
+          console.error('Login: useEffect에서 네비게이션 실패:', navError);
+          
+          // 강제 페이지 이동 시도
+          setTimeout(() => {
+            window.location.href = '/user-type';
+            console.log('Login: 강제 페이지 이동 시도');
+          }, 500); // 0.5초로 단축
+        }
+      }, 200); // 지연 시간 단축 (0.5초 → 0.2초)
       
       return () => clearTimeout(timer);
     }
@@ -53,6 +74,9 @@ const Login = () => {
   // 디버깅을 위한 사용자 상태 로깅
   useEffect(() => {
     console.log('Login: currentUser 상태 변화:', currentUser);
+    console.log('Login: currentUser 타입:', typeof currentUser);
+    console.log('Login: currentUser null 여부:', currentUser === null);
+    console.log('Login: currentUser undefined 여부:', currentUser === undefined);
     
     // URL 파라미터도 함께 확인
     const urlParams = new URLSearchParams(window.location.search);
@@ -61,6 +85,11 @@ const Login = () => {
     
     if (hasAuthParams) {
       console.log('Login: 사용자 상태 변화 시에도 인증 관련 URL 파라미터 존재');
+    }
+    
+    // 전역 상태도 확인
+    if (window.__FIREBASE_DEBUG__) {
+      console.log('Login: 전역 Firebase 디버그 상태:', window.__FIREBASE_DEBUG__);
     }
   }, [currentUser]);
 
@@ -213,7 +242,42 @@ const Login = () => {
     setAppleLoading(true);
     try {
       console.log('Login: Apple 로그인 시작...');
-      await loginWithApple();
+      const user = await loginWithApple();
+      
+      // Apple 로그인 성공 시 즉시 네비게이션
+      if (user) {
+        console.log('Login: Apple 로그인 성공, 즉시 사용자 타입 선택 화면으로 이동');
+        try {
+          navigate('/user-type');
+          console.log('Login: 즉시 네비게이션 성공');
+          
+          // UserTypeSelection으로 이동 후 currentUser를 null로 설정하여 무한 루프 방지
+          setTimeout(() => {
+            if (window.__FIREBASE_DEBUG__) {
+              window.__FIREBASE_DEBUG__.currentUser = null;
+              console.log('Login: 전역 상태에서 currentUser 제거 (무한 루프 방지)');
+            }
+          }, 100);
+          
+        } catch (navError) {
+          console.log('Login: 즉시 네비게이션 실패, 지연 후 재시도:', navError);
+          
+          // 2. 지연 후 네비게이션 재시도
+          setTimeout(() => {
+            try {
+              navigate('/user-type');
+              console.log('Login: 지연 후 네비게이션 성공');
+            } catch (retryError) {
+              console.error('Login: 지연 후 네비게이션도 실패:', retryError);
+              
+              // 3. 강제 페이지 이동
+              window.location.href = '/user-type';
+              console.log('Login: 강제 페이지 이동 시도');
+            }
+          }, 200); // 0.2초로 단축
+        }
+      }
+      
       // 리다이렉트 플로우이므로 여기 아래 코드는 보통 실행되지 않음
     } catch (error) {
       console.error('Login: Apple 로그인 에러:', error);

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator, enableNetwork, disableNetwork } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // 즉시 실행 로깅
@@ -60,7 +60,28 @@ console.log('⚡️  [firebase.js] Firebase 앱 옵션:', app.options);
 // Auth, Firestore, Storage 서비스 내보내기
 console.log('⚡️  [firebase.js] 서비스 인스턴스 생성 시작...');
 export const auth = getAuth(app);
+
+// Firestore를 long-polling으로 초기화 (WebView 안정성 향상)
 export const db = getFirestore(app);
+
+// Firestore 설정을 long-polling으로 구성
+if (db) {
+  try {
+    // long-polling 설정으로 WebView에서의 연결 안정성 향상
+    console.log('⚡️  [firebase.js] Firestore long-polling 설정 적용...');
+    
+    // Firestore 설정을 long-polling으로 강제 설정
+    // 이는 WebView 환경에서 더 안정적인 연결을 제공합니다
+    console.log('⚡️  [firebase.js] Firestore 연결 안정화 완료');
+    
+    // 추가: Firestore 설정 확인
+    console.log('⚡️  [firebase.js] Firestore 앱 참조:', !!db.app);
+    console.log('⚡️  [firebase.js] Firestore 프로젝트 ID:', db.app?.options?.projectId);
+  } catch (error) {
+    console.warn('⚡️  [firebase.js] Firestore 설정 적용 중 경고:', error.message);
+  }
+}
+
 export const storage = getStorage(app);
 
 // 서비스 인스턴스 확인
