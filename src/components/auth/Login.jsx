@@ -54,6 +54,11 @@ const Login = () => {
               window.__FIREBASE_DEBUG__.currentUser = null;
               console.log('Login: 전역 상태에서 currentUser 제거 (무한 루프 방지)');
             }
+            // AuthContext의 currentUser도 안전하게 제거
+            if (setCurrentUser) {
+              setCurrentUser(null);
+              console.log('Login: AuthContext currentUser 제거 (무한 루프 방지)');
+            }
           }, 100);
           
         } catch (navError) {
@@ -256,6 +261,11 @@ const Login = () => {
             if (window.__FIREBASE_DEBUG__) {
               window.__FIREBASE_DEBUG__.currentUser = null;
               console.log('Login: 전역 상태에서 currentUser 제거 (무한 루프 방지)');
+            }
+            // AuthContext의 currentUser도 안전하게 제거
+            if (setCurrentUser) {
+              setCurrentUser(null);
+              console.log('Login: AuthContext currentUser 제거 (무한 루프 방지)');
             }
           }, 100);
           

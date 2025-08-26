@@ -137,11 +137,11 @@ export const AuthProvider = ({ children }) => {
       // 기존 사용자 문서 확인 시작...
       console.log('⚡️  [log] - AuthContext: 기존 사용자 문서 확인 시작...');
       
-      // Firestore 작업에 타임아웃 추가
+      // Firestore 작업에 타임아웃 추가 (30초로 증가)
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Firestore 작업 타임아웃 (10초)'));
-        }, 10000); // 10초 타임아웃
+          reject(new Error('Firestore 작업 타임아웃 (30초)'));
+        }, 30000); // 30초 타임아웃으로 증가
       });
       
       // 기존 사용자 확인
@@ -193,7 +193,46 @@ export const AuthProvider = ({ children }) => {
       console.error('⚡️  [error] - AuthContext: 에러 메시지:', error.message);
       console.error('⚡️  [error] - AuthContext: 에러 스택:', error.stack);
       
-      // Firestore 저장 실패 시에도 에러를 던지지 않고 로그만 남김
+      // 타임아웃 에러인 경우 재시도 로직 실행
+      if (error.message && error.message.includes('타임아웃')) {
+        console.log('⚡️  [log] - AuthContext: Firestore 타임아웃, 재시도 중...');
+        
+        try {
+          // 간단한 데이터로 재시도 (기본 정보만)
+          const simpleData = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || 'Apple User',
+            provider: provider,
+            lastSignInTime: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          
+          console.log('⚡️  [log] - AuthContext: 재시도 데이터:', simpleData);
+          
+          // 재시도 시에는 더 짧은 타임아웃 사용
+          const retryTimeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(new Error('Firestore 재시도 타임아웃 (15초)'));
+            }, 15000);
+          });
+          
+          await Promise.race([
+            setDoc(userRef, simpleData, { merge: true }),
+            retryTimeoutPromise
+          ]);
+          
+          console.log('⚡️  [log] - AuthContext: 재시도 성공!');
+          return true;
+          
+        } catch (retryError) {
+          console.error('⚡️  [error] - AuthContext: 재시도 실패:', retryError);
+          console.log('⚡️  [log] - AuthContext: Firestore 저장 실패했지만 로그인은 계속 진행');
+          return false;
+        }
+      }
+      
+      // 타임아웃이 아닌 다른 에러의 경우
       console.log('⚡️  [log] - AuthContext: Firestore 저장 실패했지만 로그인은 계속 진행');
       return false;
     }
@@ -427,20 +466,67 @@ export const AuthProvider = ({ children }) => {
                 if (authError.message && authError.message.includes('타임아웃')) {
                   console.log('⚡️  [log] - AuthContext: Firebase Auth 타임아웃 발생, 즉시 우회 로직 실행...');
                   
-                  // 즉시 우회 로직 실행
-                  const mockUser = {
-                    uid: btoa(result.credential.idToken).substring(0, 25),
-                    email: result.credential.email || 'seokgyu123456@gmail.com',
-                    displayName: result.credential.displayName || 'Apple User',
-                    providerId: 'apple.com',
-                    isAnonymous: false,
-                    emailVerified: true,
-                    photoURL: null,
-                    metadata: {
-                      creationTime: new Date().toISOString(),
-                      lastSignInTime: new Date().toISOString()
+                  // Apple ID에서 실제 사용자 ID 추출 (JWT 토큰 디코딩)
+                  const tokenParts = result.credential.idToken.split('.');
+                  if (tokenParts.length === 3) {
+                    try {
+                      const payload = JSON.parse(atob(tokenParts[1]));
+                      const appleUserId = payload.sub; // Apple의 실제 사용자 ID
+                      console.log('⚡️  [log] - AuthContext: Apple 실제 사용자 ID 추출됨:', appleUserId);
+                      
+                      // Apple ID를 기반으로 일관된 UID 생성
+                      const consistentUid = `apple_${appleUserId.replace(/[^a-zA-Z0-9]/g, '')}`;
+                      console.log('⚡️  [log] - AuthContext: 일관된 UID 생성:', consistentUid);
+                      
+                      // 일관된 UID로 사용자 객체 생성
+                      const mockUser = {
+                        uid: consistentUid,
+                        email: payload.email || 'seokgyu123456@gmail.com',
+                        displayName: payload.email ? payload.email.split('@')[0] : 'Apple User',
+                        providerId: 'apple.com',
+                        isAnonymous: false,
+                        emailVerified: true,
+                        photoURL: null,
+                        metadata: {
+                          creationTime: new Date().toISOString(),
+                          lastSignInTime: new Date().toISOString()
+                        }
+                      };
+                      
+                      console.log('⚡️  [log] - AuthContext: 생성된 사용자 객체:', mockUser);
+                      
+                      // Firestore에 저장 시도
+                      console.log('⚡️  [log] - AuthContext: Firestore 저장 시작...');
+                      const saveResult = await saveUserToFirestore(mockUser, 'apple', currentDb);
+                      
+                      if (saveResult) {
+                        console.log('⚡️  [log] - AuthContext: Firestore 저장 성공!');
+                      } else {
+                        console.log('⚡️  [log] - AuthContext: Firestore 저장 실패했지만 로그인은 계속 진행');
+                      }
+                      
+                      // 사용자 상태 업데이트
+                      console.log('⚡️  [log] - AuthContext: 인증 상태 업데이트 시작...');
+                      setCurrentUser(mockUser);
+                      
+                      // 전역 상태에도 사용자 설정
+                      if (window.__FIREBASE_DEBUG__) {
+                        window.__FIREBASE_DEBUG__.currentUser = mockUser;
+                        console.log('⚡️  [log] - AuthContext: 전역 상태에도 사용자 설정 완료');
+                      }
+                      
+                      console.log('⚡️  [log] - AuthContext: 인증 상태 업데이트 완료:', mockUser);
+                      console.log('⚡️  [log] - AuthContext: Apple 로그인 완료 (Firebase Auth 우회)!');
+                      
+                      return mockUser;
+                      
+                    } catch (decodeError) {
+                      console.error('⚡️  [error] - AuthContext: JWT 토큰 디코딩 실패:', decodeError);
+                      throw new Error('Apple ID 토큰 처리 실패');
                     }
-                  };
+                  } else {
+                    throw new Error('유효하지 않은 Apple ID 토큰');
+                  }
                   
                   console.log('⚡️  [log] - AuthContext: 생성된 사용자 객체:', mockUser);
                   
