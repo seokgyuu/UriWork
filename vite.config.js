@@ -28,11 +28,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore']
-        }
+        manualChunks: undefined // Firebase 수동 청킹 비활성화
       }
     }
+  },
+  // Firebase 모듈 로드 문제 해결
+  optimizeDeps: {
+    include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage']
   },
   // COOP 오류 방지를 위한 추가 설정
   define: {

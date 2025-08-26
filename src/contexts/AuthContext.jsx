@@ -6,22 +6,19 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  OAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult
-} from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { signInWithPopup, GoogleAuthProvider, OAuthProvider, onAuthStateChanged, getRedirectResult, signInWithRedirect, signInWithCredential } from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc, collection, query, where } from 'firebase/firestore';
+import { Device } from '@capacitor/device';
+import { Capacitor } from '@capacitor/core';
+
+// Firebase 모듈 직접 import (상대 경로 사용)
 import { auth, db } from '../firebase';
-import { authAPI } from '../services/api';
-import { uploadProfileImage, deleteFile, getFilePathFromURL } from '../services/storage';
-import toast from 'react-hot-toast';
+
+// isPlatform 함수 직접 구현
+const isPlatform = (platform) => {
+  if (typeof window === 'undefined') return false;
+  return Capacitor.getPlatform() === platform;
+};
 
 const AuthContext = createContext();
 
@@ -36,619 +33,561 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authStateReady, setAuthStateReady] = useState(false);
 
+  // Firebase 인스턴스 상태 확인 (전역 객체 우선 확인)
+  console.log('⚡️  [AuthContext] AuthProvider 초기화 - Firebase 인스턴스 상태:');
+  console.log('⚡️  [AuthContext] 전역 FIREBASE_AUTH:', !!window.FIREBASE_AUTH);
+  console.log('⚡️  [AuthContext] 전역 FIREBASE_DB:', !!window.FIREBASE_DB);
+  console.log('⚡️  [AuthContext] import된 auth 인스턴스:', !!auth);
+  console.log('⚡️  [AuthContext] import된 db 인스턴스:', !!db);
+  console.log('⚡️  [AuthContext] 전역 __FIREBASE_DEBUG__:', !!window.__FIREBASE_DEBUG__);
+
+  // Firebase 모듈이 로드되지 않은 경우 대체 방법 시도
   useEffect(() => {
-    console.log('AuthContext: 인증 상태 감지 시작...');
-    
-    let isMounted = true;
-    
-    const initializeAuth = async () => {
-      try {
-        // 세션 초기화 (타임아웃 추가)
-        await Promise.race([
-          auth.authStateReady(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Auth timeout')), 10000)
-          )
-        ]);
-        console.log('AuthContext: Auth 세션 준비 완료');
+    if (!auth || !db) {
+      console.log('⚡️  [AuthContext] Firebase 모듈이 로드되지 않음, 대체 방법 시도...');
+      
+      // 전역 객체에서 Firebase 인스턴스 확인
+      if (window.FIREBASE_AUTH && window.FIREBASE_DB) {
+        console.log('⚡️  [AuthContext] 전역 Firebase 인스턴스 발견, 사용');
+        // 전역 객체에서 Firebase 인스턴스를 가져와서 사용
+        window.__FIREBASE_DEBUG__ = {
+          auth: window.FIREBASE_AUTH,
+          db: window.FIREBASE_DB,
+          storage: window.FIREBASE_STORAGE
+        };
+      } else if (window.__FIREBASE_DEBUG__) {
+        console.log('⚡️  [AuthContext] 전역 Firebase 디버그 객체 발견');
+      }
+      
+      // 동적 import 시도
+      import('../firebase').then((firebaseModule) => {
+        console.log('⚡️  [AuthContext] 동적 import 성공:', firebaseModule);
+        // 동적으로 로드된 Firebase 인스턴스 사용
+        window.__FIREBASE_DEBUG__ = firebaseModule;
+      }).catch((error) => {
+        console.error('⚡️  [AuthContext] 동적 import 실패:', error);
+      });
+    }
+  }, []);
+
+  // Firebase 모듈 강제 초기화 함수
+  const forceInitializeFirebase = async () => {
+    try {
+      console.log('⚡️  [AuthContext] Firebase 모듈 강제 초기화 시작...');
+      
+      // 1. 전역 객체에서 Firebase 인스턴스 확인 (우선순위 1)
+      if (window.FIREBASE_AUTH && window.FIREBASE_DB) {
+        console.log('⚡️  [AuthContext] 전역 Firebase 인스턴스에서 인스턴스 사용');
+        return {
+          auth: window.FIREBASE_AUTH,
+          db: window.FIREBASE_DB
+        };
+      }
+      
+      // 2. 전역 디버그 객체에서 Firebase 인스턴스 확인 (우선순위 2)
+      if (window.__FIREBASE_DEBUG__) {
+        console.log('⚡️  [AuthContext] 전역 Firebase 디버그 객체에서 인스턴스 사용');
+        return {
+          auth: window.__FIREBASE_DEBUG__.auth,
+          db: window.__FIREBASE_DEBUG__.db
+        };
+      }
+      
+      // 3. 동적 import 시도 (우선순위 3)
+      console.log('⚡️  [AuthContext] 동적 import 시도...');
+      const firebaseModule = await import('../firebase');
+      console.log('⚡️  [AuthContext] 동적 import 성공:', firebaseModule);
+      
+      // 4. 전역 객체에 할당
+      window.__FIREBASE_DEBUG__ = firebaseModule;
+      
+      return {
+        auth: firebaseModule.auth,
+        db: firebaseModule.db
+      };
+    } catch (error) {
+      console.error('⚡️  [AuthContext] Firebase 모듈 강제 초기화 실패:', error);
+      throw error;
+    }
+  };
+
+  // 사용자를 Firestore에 저장
+  const saveUserToFirestore = async (user, provider = 'unknown', customDb = null) => {
+    try {
+      console.log('⚡️  [log] - AuthContext: saveUserToFirestore 시작, 사용자:', user);
+      console.log('⚡️  [log] - AuthContext: 제공자:', provider);
+      console.log('⚡️  [log] - AuthContext: 전달받은 Firestore 인스턴스:', !!customDb);
+      console.log('⚡️  [log] - AuthContext: 기본 Firestore 인스턴스:', !!db);
+      
+      // Firestore 인스턴스 결정 (전달받은 것 우선, 없으면 기본 사용)
+      const firestoreDb = customDb || db;
+      console.log('⚡️  [log] - AuthContext: 사용할 Firestore 인스턴스:', !!firestoreDb);
+      console.log('⚡️  [log] - AuthContext: Firestore 앱 참조:', !!firestoreDb?.app);
+      
+      if (!user || !user.uid) {
+        console.error('⚡️  [error] - AuthContext: 유효하지 않은 사용자 정보');
+        throw new Error('유효하지 않은 사용자 정보입니다.');
+      }
+      
+      if (!firestoreDb) {
+        console.error('⚡️  [error] - AuthContext: Firestore 인스턴스가 없습니다');
+        throw new Error('Firestore 인스턴스를 찾을 수 없습니다.');
+      }
+      
+      const userRef = doc(firestoreDb, 'users', user.uid);
+      console.log('⚡️  [log] - AuthContext: Firestore 문서 참조 생성:', userRef.path);
+      
+      // 기존 사용자 정보 확인
+      console.log('⚡️  [log] - AuthContext: 기존 사용자 문서 확인 시작...');
+      const userDoc = await getDoc(userRef);
+      console.log('⚡️  [log] - AuthContext: 기존 사용자 문서 확인:', userDoc.exists());
+      
+      if (userDoc.exists()) {
+        console.log('⚡️  [log] - AuthContext: 기존 사용자 발견, 정보 업데이트...');
         
-        // URL에서 로그인 관련 파라미터 확인
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasAuthParams = urlParams.has('apiKey') || urlParams.has('authDomain') || 
-                             urlParams.has('continueUrl') || urlParams.has('state');
-        
-        console.log('AuthContext: URL 파라미터 확인:', {
-          hasAuthParams,
-          urlParams: Object.fromEntries(urlParams.entries())
+        // 기존 사용자 정보 업데이트
+        await updateDoc(userRef, {
+          lastLoginAt: new Date(),
+          email: user.email || userDoc.data().email,
+          displayName: user.displayName || userDoc.data().displayName,
+          photoURL: user.photoURL || userDoc.data().photoURL,
+          updatedAt: new Date()
         });
         
-        // 리다이렉트 결과 확인 (여러 번 시도)
-        let redirectResult = null;
-        let retryCount = 0;
-        const maxRetries = 5; // 재시도 횟수 증가
+        console.log('⚡️  [log] - AuthContext: 기존 사용자 정보 업데이트 완료');
+      } else {
+        console.log('⚡️  [log] - AuthContext: 새 사용자 발견, 문서 생성...');
         
-        while (!redirectResult && retryCount < maxRetries) {
-          try {
-            redirectResult = await getRedirectResult(auth);
-            if (redirectResult) {
-              console.log('AuthContext: 리다이렉트 로그인 성공:', redirectResult.user);
-              break;
-            }
-          } catch (error) {
-            console.log('AuthContext: 리다이렉트 결과 확인 시도', retryCount + 1, '실패:', error);
-          }
+        // 새 사용자 문서 생성
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          provider: provider,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastLoginAt: new Date(),
+          userType: null, // 사용자 타입은 나중에 설정
+          isActive: true
+        };
+        
+        console.log('⚡️  [log] - AuthContext: 새 사용자 데이터:', userData);
+        await setDoc(userRef, userData);
+        console.log('⚡️  [log] - AuthContext: 새 사용자 문서 생성 완료');
+      }
+      
+      console.log('⚡️  [log] - AuthContext: saveUserToFirestore 완료');
+      
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: saveUserToFirestore 실패:', error);
+      console.error('⚡️  [error] - AuthContext: 에러 상세:', error.message, error.code, error.stack);
+      throw error;
+    }
+  };
+
+  // Google 로그인
+  const loginWithGoogle = async () => {
+    try {
+      console.log('⚡️  [log] - AuthContext: Google 로그인 시작...');
+      const platform = isPlatform('ios') ? 'ios' : isPlatform('android') ? 'android' : 'web';
+      console.log('⚡️  [log] - AuthContext: 플랫폼:', platform);
+      
+      // Firebase 모듈이 로드되지 않은 경우 동적 로드
+      if (!auth || !db) {
+        console.log('⚡️  [log] - AuthContext: Firebase 모듈이 로드되지 않음, 동적 로드 시작...');
+        // await loadFirebase(); // 이 부분은 제거되었으므로 주석 처리
+      }
+      
+      if (platform === 'ios' || platform === 'android') {
+        // 플랫폼 확인
+        const deviceInfo = await Device.getInfo();
+        console.log('⚡️  [log] - AuthContext: 디바이스 정보:', deviceInfo);
+        
+        if (deviceInfo.isVirtual) {
+          console.log('⚡️  [log] - AuthContext: 시뮬레이터 감지 → Google 웹 리다이렉트 폴백 사용');
+          // 시뮬레이터에서는 웹 리다이렉트 사용
+          const provider = new GoogleAuthProvider();
+          provider.addScope('email');
+          provider.addScope('profile');
           
-          if (!redirectResult) {
-            retryCount++;
-            if (retryCount < maxRetries) {
-              console.log('AuthContext: 리다이렉트 결과 재시도 중...', retryCount);
-              await new Promise(resolve => setTimeout(resolve, 1500)); // 대기 시간 증가
-            }
-          }
+          await signInWithRedirect(auth, provider);
+          return;
         }
+      }
+      
+      // 네이티브 플랫폼 또는 실제 디바이스
+      console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 → Google 팝업 사용');
+      
+      const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      
+      const result = await signInWithPopup(auth, provider);
+      console.log('⚡️  [log] - AuthContext: Google 팝업 로그인 성공:', result.user);
+      
+      // 사용자 정보를 Firestore에 저장
+      try {
+        console.log('⚡️  [log] - AuthContext: Google 로그인 Firestore 저장 시작...');
+        await saveUserToFirestore(result.user, 'google', db);
+        console.log('⚡️  [log] - AuthContext: Google 로그인 Firestore 저장 완료!');
+      } catch (firestoreError) {
+        console.error('⚡️  [error] - AuthContext: Google 로그인 Firestore 저장 실패:', firestoreError);
+        // Firestore 저장 실패해도 로그인은 성공으로 처리
+      }
+      return result.user;
+      
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: Google 로그인 실패:', error);
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('로그인이 취소되었습니다.');
+      } else if (error.code === 'auth/popup-blocked') {
+        // 팝업이 차단된 경우 리다이렉트 시도
+        console.log('⚡️  [log] - AuthContext: 팝업 차단됨 → 리다이렉트 시도');
+        const provider = new GoogleAuthProvider();
+        provider.addScope('email');
+        provider.addScope('profile');
         
-        // 로컬호스트 환경에서 추가 리다이렉트 결과 확인
-        if (!redirectResult && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-          console.log('AuthContext: 로컬호스트 환경에서 추가 리다이렉트 결과 확인...');
-          
-          // 로컬호스트에서는 더 긴 대기 후 재시도
-          setTimeout(async () => {
-            try {
-              const delayedResult = await getRedirectResult(auth);
-              if (delayedResult && isMounted) {
-                console.log('AuthContext: 로컬호스트 지연된 리다이렉트 결과 발견:', delayedResult.user);
-                await saveUserToFirestore(delayedResult.user);
-                setCurrentUser(delayedResult.user);
-                setLoading(false);
-                toast.success('Google 로그인되었습니다!');
-              }
-            } catch (error) {
-              console.log('AuthContext: 로컬호스트 지연된 리다이렉트 결과 확인 실패:', error);
-            }
-          }, 5000); // 5초 후 재시도
-          
-          // 로컬호스트에서 추가 지연 확인 (10초 후)
-          setTimeout(async () => {
-            try {
-              const extraDelayedResult = await getRedirectResult(auth);
-              if (extraDelayedResult && isMounted) {
-                console.log('AuthContext: 로컬호스트 추가 지연된 리다이렉트 결과 발견:', extraDelayedResult.user);
-                await saveUserToFirestore(extraDelayedResult.user);
-                setCurrentUser(extraDelayedResult.user);
-                setLoading(false);
-                toast.success('Google 로그인되었습니다!');
-              }
-            } catch (error) {
-              console.log('AuthContext: 로컬호스트 추가 지연된 리다이렉트 결과 확인 실패:', error);
-            }
-          }, 10000); // 10초 후 재시도
-        }
+        await signInWithRedirect(auth, provider);
+        return;
+      } else {
+        throw error;
+      }
+    }
+  };
+
+  // Apple 로그인
+  const loginWithApple = async () => {
+    try {
+      console.log('⚡️  [log] - AuthContext: Apple 로그인 시작...');
+      const platform = isPlatform('ios') ? 'ios' : isPlatform('android') ? 'android' : 'web';
+      console.log('⚡️  [log] - AuthContext: 플랫폼:', platform);
+
+      if (platform === 'ios') {
+        // iOS에서는 네이티브 Apple Sign In 사용
+        console.log('⚡️  [log] - AuthContext: iOS 네이티브 Apple Sign In 시도...');
         
-        if (redirectResult) {
+        // 네이티브 Apple Sign In 플러그인 확인
+        if (window.Capacitor?.Plugins?.AppleSignInPlugin) {
+          console.log('⚡️  [log] - AuthContext: AppleSignInPlugin 발견, 네이티브 Apple Sign In 시작...');
+          
           try {
-            await saveUserToFirestore(redirectResult.user);
-            console.log('AuthContext: 리다이렉트 사용자 데이터 Firestore 저장 완료');
+            const result = await window.Capacitor.Plugins.AppleSignInPlugin.signIn();
+            console.log('⚡️  [log] - AuthContext: 네이티브 Apple Sign In 결과:', result);
             
-            // 리다이렉트 로그인 성공 시 즉시 사용자 상태 설정
-            console.log('AuthContext: 리다이렉트 사용자 상태 설정 중...');
-            setCurrentUser(redirectResult.user);
-            setLoading(false);
-            
-            toast.success('Google 로그인되었습니다!');
-            console.log('AuthContext: 리다이렉트 로그인 완료, 사용자 상태 설정됨');
-            
-            // URL 파라미터 정리
-            if (hasAuthParams) {
-              const cleanUrl = window.location.pathname;
-              window.history.replaceState({}, document.title, cleanUrl);
-              console.log('AuthContext: URL 파라미터 정리 완료');
-            }
-            
-          } catch (error) {
-            console.error('AuthContext: 리다이렉트 사용자 데이터 저장 실패:', error);
-            // 저장 실패해도 로그인은 성공으로 처리
-            console.log('AuthContext: 데이터 저장 실패했지만 로그인은 성공으로 처리');
-            setCurrentUser(redirectResult.user);
-            setLoading(false);
-          }
-        } else {
-          console.log('AuthContext: 리다이렉트 결과 없음');
-          
-          // URL 파라미터가 있지만 리다이렉트 결과가 없는 경우 처리
-          if (hasAuthParams) {
-            console.log('AuthContext: URL 파라미터는 있지만 리다이렉트 결과가 없음, 추가 대기...');
-            
-            // 추가 대기 후 다시 시도
-            setTimeout(async () => {
-              if (isMounted) {
-                try {
-                  const delayedResult = await getRedirectResult(auth);
-                  if (delayedResult) {
-                    console.log('AuthContext: 지연된 리다이렉트 결과 발견:', delayedResult.user);
-                    await saveUserToFirestore(delayedResult.user);
-                    setCurrentUser(delayedResult.user);
-                    setLoading(false);
-                    toast.success('Google 로그인되었습니다!');
+            if (result && result.success && result.credential) {
+              console.log('⚡️  [log] - AuthContext: Firebase Auth로 Apple Sign In 처리...');
+              
+                  // Firebase 모듈이 로드되지 않은 경우 강제 초기화 시도
+                  if (!auth || !db) {
+                    console.log('⚡️  [log] - AuthContext: Firebase 모듈이 로드되지 않음, 강제 초기화 시도...');
+                    
+                    try {
+                      const firebaseInstances = await forceInitializeFirebase();
+                      console.log('⚡️  [log] - AuthContext: Firebase 강제 초기화 성공:', firebaseInstances);
+                      
+                      // 강제 초기화된 Firebase 인스턴스 사용
+                      const { auth: forceAuth, db: forceDb } = firebaseInstances;
+                      
+                      if (!forceAuth || !forceDb) {
+                        throw new Error('강제 초기화 후에도 Firebase 인스턴스를 찾을 수 없습니다');
+                      }
+                      
+                      console.log('⚡️  [log] - AuthContext: 강제 초기화된 Firebase 인스턴스 사용');
+                      
+                    } catch (error) {
+                      console.error('⚡️  [log] - AuthContext: Firebase 강제 초기화 실패:', error);
+                      throw new Error('Firebase 모듈을 초기화할 수 없습니다: ' + error.message);
+                    }
                   }
-                } catch (error) {
-                  console.log('AuthContext: 지연된 리다이렉트 결과 확인 실패:', error);
-                }
+              
+              // OAuthProvider로 Apple Sign In 처리
+              const provider = new OAuthProvider('apple.com');
+              const credential = provider.credential({
+                idToken: result.credential.idToken,
+                rawNonce: result.credential.rawNonce
+              });
+              
+              console.log('⚡️  [log] - AuthContext: signInWithCredential 시작...');
+              
+              // Firebase 인스턴스 상태 재확인
+              let currentAuth = auth;
+              let currentDb = db;
+              
+              if (!currentAuth || !currentDb) {
+                console.log('⚡️  [log] - AuthContext: Firebase 인스턴스 재확인 필요, 강제 초기화 재시도...');
+                const firebaseInstances = await forceInitializeFirebase();
+                currentAuth = firebaseInstances.auth;
+                currentDb = firebaseInstances.db;
+                console.log('⚡️  [log] - AuthContext: 재초기화된 Firebase 인스턴스:', !!currentAuth, !!currentDb);
               }
-            }, 3000);
-          }
-          
-          // 리다이렉트 결과가 없어도 현재 Auth 상태 확인
-          if (auth.currentUser) {
-            console.log('AuthContext: 현재 Auth 상태에서 사용자 발견:', auth.currentUser);
-            setCurrentUser(auth.currentUser);
-            setLoading(false);
-          }
-        }
-        
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          console.log('AuthContext: 인증 상태 변경:', user ? '로그인됨' : '로그아웃됨');
-          
-          if (isMounted) {
-            try {
-              if (user) {
-                console.log('AuthContext: 사용자 정보:', {
+              
+              // 30초 타임아웃 설정
+              const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                  reject(new Error('Firebase Auth 타임아웃 (30초)'));
+                }, 30000);
+              });
+              
+              const authPromise = signInWithCredential(currentAuth, credential);
+              const userCredential = await Promise.race([authPromise, timeoutPromise]);
+              
+              console.log('⚡️  [log] - AuthContext: signInWithCredential 완료!');
+              const user = userCredential.user;
+              console.log('⚡️  [log] - AuthContext: Firebase Auth Apple 로그인 성공:', user);
+              
+              // 사용자 정보를 Firestore에 저장
+              try {
+                console.log('⚡️  [log] - AuthContext: Firestore 저장 시작...');
+                console.log('⚡️  [log] - AuthContext: 사용자 정보:', {
                   uid: user.uid,
                   email: user.email,
-                  displayName: user.displayName
+                  displayName: user.displayName,
+                  providerId: user.providerId
                 });
+                console.log('⚡️  [log] - AuthContext: Firestore 인스턴스 확인:', !!currentDb);
+                console.log('⚡️  [log] - AuthContext: Firestore 앱 참조:', !!currentDb?.app);
                 
-                // 사용자가 있으면 즉시 상태 설정
-                setCurrentUser(user);
-                setLoading(false);
+                await saveUserToFirestore(user, 'apple', currentDb);
+                console.log('⚡️  [log] - AuthContext: Firestore 저장 완료!');
+              } catch (firestoreError) {
+                console.error('⚡️  [error] - AuthContext: Firestore 저장 실패:', firestoreError);
+                console.error('⚡️  [error] - AuthContext: Firestore 에러 코드:', firestoreError.code);
+                console.error('⚡️  [error] - AuthContext: Firestore 에러 메시지:', firestoreError.message);
+                console.error('⚡️  [error] - AuthContext: Firestore 에러 스택:', firestoreError.stack);
                 
-                // GIS 등 모든 경로에서 Firestore 사용자 문서 보장
-                try {
-                  saveUserToFirestore(user);
-                } catch (e) {
-                  console.log('AuthContext: Firestore 저장 스케줄링 실패(무시):', e);
-                }
-              } else {
-                console.log('AuthContext: 사용자가 로그아웃됨');
-                // 리다이렉트 결과가 있거나 URL 파라미터가 있는 경우는 로그아웃으로 처리하지 않음
-                if (!redirectResult && !hasAuthParams) {
-                  console.log('AuthContext: 리다이렉트 결과와 URL 파라미터 모두 없음, 로그아웃 상태로 설정');
-                  setCurrentUser(null);
-                  setLoading(false);
-                } else {
-                  console.log('AuthContext: 리다이렉트 결과 또는 URL 파라미터가 있음, 로그아웃 상태 설정 건너뜀');
-                  
-                  // 리다이렉트 결과가 있는 경우 사용자 상태 재설정
-                  if (redirectResult && redirectResult.user) {
-                    setTimeout(() => {
-                      if (isMounted) {
-                        console.log('AuthContext: 리다이렉트 결과로 사용자 상태 재설정');
-                        setCurrentUser(redirectResult.user);
-                        setLoading(false);
-                      }
-                    }, 1000);
-                  }
-                }
+                // Firestore 저장 실패해도 로그인은 성공으로 처리
+                console.log('⚡️  [log] - AuthContext: Firestore 저장 실패했지만 로그인은 성공으로 처리');
               }
-            } catch (error) {
-              console.error('AuthContext: 상태 설정 에러:', error);
-              if (isMounted) {
-                setCurrentUser(null);
-                setLoading(false);
-              }
+              
+              console.log('⚡️  [log] - AuthContext: Apple 로그인 완료!');
+              return user;
+              
+            } else {
+              throw new Error('Apple Sign In에서 credential을 받지 못했습니다.');
             }
+          } catch (nativeError) {
+            console.error('⚡️  [error] - AuthContext: 네이티브 Apple Sign In 실패:', nativeError);
+            throw nativeError;
           }
-        }, (error) => {
-          console.error('AuthContext: 인증 상태 변경 에러:', error);
-          
-          // 에러 발생 시에도 로딩 상태 해제
-          if (isMounted) {
+        } else {
+          console.log('⚡️  [log] - AuthContext: AppleSignInPlugin을 찾을 수 없음, 웹 폴백 사용');
+          // 웹 폴백: 리다이렉트 사용
+          const provider = new OAuthProvider('apple.com');
+          provider.addScope('email');
+          provider.addScope('name');
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+      } else {
+        // 웹 플랫폼에서는 팝업 사용
+        console.log('⚡️  [log] - AuthContext: 웹 플랫폼 → Apple 팝업 사용');
+        
+        const provider = new OAuthProvider('apple.com');
+        provider.addScope('email');
+        provider.addScope('name');
+        
+        const result = await signInWithPopup(auth, provider);
+        console.log('⚡️  [log] - AuthContext: Apple 팝업 로그인 성공:', result.user);
+        
+        await saveUserToFirestore(result.user);
+        return result.user;
+      }
+      
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: Apple 로그인 실패:', error);
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('로그인이 취소되었습니다.');
+      } else if (error.code === 'auth/popup-blocked') {
+        // 팝업이 차단된 경우 리다이렉트 시도
+        console.log('⚡️  [log] - AuthContext: 팝업 차단됨 → 리다이렉트 시도');
+        const provider = new OAuthProvider('apple.com');
+        provider.addScope('email');
+        provider.addScope('name');
+        
+        await signInWithRedirect(auth, provider);
+        return;
+      } else {
+        throw error;
+      }
+    }
+  };
+
+  // 로그아웃
+  const logout = async () => {
+    try {
+      await auth.signOut();
+      console.log('⚡️  [log] - AuthContext: 로그아웃 완료');
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: 로그아웃 실패:', error);
+      throw error;
+    }
+  };
+
+  // 사용자 타입 업데이트
+  const updateUserType = async (userType) => {
+    try {
+      if (!currentUser) {
+        throw new Error('로그인된 사용자가 없습니다.');
+      }
+      
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        userType: userType,
+        updatedAt: new Date()
+      });
+      
+      // 현재 사용자 상태 업데이트
+      setCurrentUser(prev => ({
+        ...prev,
+        userType: userType
+      }));
+      
+      console.log('⚡️  [log] - AuthContext: 사용자 타입 업데이트 완료:', userType);
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: 사용자 타입 업데이트 실패:', error);
+      throw error;
+    }
+  };
+
+  // 사용자 선호도 업데이트
+  const updateUserPreferences = async (preferences) => {
+    try {
+      if (!currentUser) {
+        throw new Error('로그인된 사용자가 없습니다.');
+      }
+      
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        preferences: preferences,
+        updatedAt: new Date()
+      });
+      
+      // 현재 사용자 상태 업데이트
+      setCurrentUser(prev => ({
+        ...prev,
+        preferences: preferences
+      }));
+      
+      console.log('⚡️  [log] - AuthContext: 사용자 선호도 업데이트 완료');
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: 사용자 선호도 업데이트 실패:', error);
+      throw error;
+    }
+  };
+
+  // 사용자 정보 가져오기
+  const getUserData = async (uid) => {
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        return userSnap.data();
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: 사용자 정보 가져오기 실패:', error);
+      throw error;
+    }
+  };
+
+  // 인증 상태 초기화
+  useEffect(() => {
+    const initializeFirebase = async () => {
+      try {
+        console.log('⚡️  [AuthContext] Firebase 초기화 시작...');
+        
+        // Firebase 인스턴스 상태 확인
+        if (!auth) {
+          throw new Error('Firebase Auth 인스턴스가 없습니다!');
+        }
+        if (!db) {
+          throw new Error('Firestore 인스턴스가 없습니다!');
+        }
+        if (!auth.app) {
+          throw new Error('Firebase 앱이 초기화되지 않았습니다!');
+        }
+        
+        console.log('⚡️  [AuthContext] Firebase 인스턴스 상태 확인 완료 - 모든 인스턴스 정상');
+        console.log('⚡️  [AuthContext] Firebase 초기화 완료');
+        
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          try {
+            if (user) {
+              console.log('⚡️  [log] - AuthContext: 사용자 로그인 상태 감지:', user);
+              
+              // Firestore에서 사용자 정보 가져오기
+              const userData = await getUserData(user.uid);
+              
+              if (userData) {
+                // Firestore 데이터와 Firebase Auth 데이터 병합
+                setCurrentUser({
+                  ...user,
+                  userType: userData.userType,
+                  preferences: userData.preferences
+                });
+              } else {
+                setCurrentUser(user);
+              }
+            } else {
+              console.log('⚡️  [log] - AuthContext: 사용자 로그아웃 상태 감지');
+              setCurrentUser(null);
+            }
+          } catch (error) {
+            console.error('⚡️  [error] - AuthContext: 인증 상태 변경 처리 실패:', error);
             setCurrentUser(null);
+          } finally {
             setLoading(false);
+            setAuthStateReady(true);
           }
         });
 
         return unsubscribe;
       } catch (error) {
-        console.error('AuthContext: Auth 초기화 에러:', error);
-        if (isMounted) {
-          setCurrentUser(null);
-          setLoading(false);
-        }
-        return () => {};
+        console.error('⚡️  [error] - AuthContext: Firebase 초기화 실패:', error);
+        setLoading(false);
+        setAuthStateReady(true);
       }
     };
 
-    const cleanup = initializeAuth().then(unsubscribe => {
-      return unsubscribe;
-    });
-    
-    return () => {
-      isMounted = false;
-      cleanup.then(unsubscribe => {
-        if (unsubscribe) {
-          unsubscribe();
-        }
-      });
-    };
+    initializeFirebase();
   }, []);
 
-  const register = async (email, password, userType, name) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Firestore에 사용자 정보 저장
-      const userDocRef = doc(db, 'users', userCredential.user.uid);
-      await setDoc(userDocRef, {
-        uid: userCredential.user.uid,
-        email: email,
-        name: name,
-        user_type: userType,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-      
-      // 백엔드에 사용자 정보 전송
-      await authAPI.register({
-        email,
-        password,
-        user_type: userType,
-        name
-      });
-
-      toast.success('회원가입이 완료되었습니다!');
-      return userCredential.user;
-    } catch (error) {
-      console.error('회원가입 에러:', error);
-      toast.error('회원가입 중 오류가 발생했습니다.');
-      throw error;
-    }
-  };
-
-  const login = async (email, password) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // 백엔드에 로그인 정보 전송
-      await authAPI.login({ email, password });
-      
-      toast.success('로그인되었습니다!');
-      return userCredential.user;
-    } catch (error) {
-      toast.error('로그인 중 오류가 발생했습니다.');
-      throw error;
-    }
-  };
-
-      const loginWithGoogle = async () => {
-    try {
-      console.log('AuthContext: Google 로그인 시작...');
-      
-      // 모든 플랫폼에서 Google 로그인 허용
-      let platform = 'web';
-      
-      if (window.Capacitor) {
-        try {
-          platform = window.Capacitor.getPlatform();
-          console.log('AuthContext: 플랫폼:', platform);
-        } catch (error) {
-          console.log('AuthContext: 플랫폼 감지 실패:', error);
-        }
-      }
-      
-      console.log('AuthContext: 현재 플랫폼:', platform);
-      
-      // Firebase Auth Google 로그인 사용
-      const provider = new GoogleAuthProvider();
-      
-      // 기본 스코프 설정
-      provider.addScope('email');
-      provider.addScope('profile');
-      
-      // 계정 선택 화면 표시 (Firebase가 공식 지원하는 최소 파라미터만 사용)
-      provider.setCustomParameters({
-        prompt: 'select_account'
-      });
-      
-      // 리다이렉트 설정 개선
-      if (platform === 'web') {
-        // 웹에서는 현재 도메인을 리다이렉트 도메인으로 설정
-        const currentDomain = window.location.origin;
-        console.log('AuthContext: 리다이렉트 도메인 설정:', currentDomain);
-        
-        // 리다이렉트 URL 관련 커스텀 파라미터는 사용하지 않음 (Firebase가 내부적으로 처리)
-        if (currentDomain.includes('localhost') || currentDomain.includes('127.0.0.1')) {
-          console.log('AuthContext: 로컬호스트 환경 감지');
-        }
-      }
-      
-      console.log('AuthContext: Firebase Auth 객체:', auth);
-      console.log('AuthContext: Google Provider:', provider);
-      
-      // 세션 초기화 후 로그인 시도
+  // 리다이렉트 결과 처리
+  useEffect(() => {
+    const handleRedirectResult = async () => {
       try {
-        await Promise.race([
-          auth.authStateReady(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Auth timeout')), 5000)
-          )
-        ]);
-        console.log('AuthContext: 세션 준비 완료');
+        console.log('⚡️  [log] - AuthContext: 리다이렉트 결과 처리 시작...');
+        
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log('⚡️  [log] - AuthContext: 리다이렉트 결과 감지:', result.user);
+          await saveUserToFirestore(result.user);
+        }
       } catch (error) {
-        console.log('AuthContext: 세션 초기화 타임아웃, 계속 진행');
+        console.error('⚡️  [error] - AuthContext: 리다이렉트 결과 처리 실패:', error);
       }
-      
-      // 웹에서는 팝업 방식 우선 시도 (404 에러 방지)
-      if (platform === 'web') {
-        // 현재 도메인 확인
-        const currentDomain = window.location.origin;
-        
-        // 웹에서는 리다이렉트 방식만 사용하여 COOP 팝업 경고 방지
-        console.log('AuthContext: 웹 환경에서 리다이렉트 방식 사용...');
-        try {
-          await signInWithRedirect(auth, provider);
-          console.log('AuthContext: 웹 리다이렉트 로그인 시작');
-          toast.info('Google 로그인 페이지로 이동합니다...');
-          // 리다이렉트 후 결과는 onAuthStateChanged에서 처리됨
-        } catch (redirectError) {
-          console.error('AuthContext: 웹 리다이렉트 로그인 실패:', redirectError);
-          throw redirectError;
-        }
-      } else {
-        // 모바일에서는 리다이렉트 방식만 사용 (COOP 오류 완전 방지)
-        console.log('AuthContext: 모바일 환경에서 리다이렉트 방식으로 Google 로그인 시도...');
-        try {
-          await signInWithRedirect(auth, provider);
-          console.log('AuthContext: 모바일 리다이렉트 로그인 시작');
-          toast.info('Google 로그인 페이지로 이동합니다...');
-          // 리다이렉트 후 결과는 onAuthStateChanged에서 처리됨
-        } catch (redirectError) {
-          console.error('AuthContext: 모바일 리다이렉트 로그인 실패:', redirectError);
-          
-          // 모바일에서는 팝업 시도하지 않음 (COOP 오류 방지)
-          throw new Error('모바일에서 Google 로그인에 실패했습니다. 다시 시도해주세요.');
-        }
-      }
-    } catch (error) {
-      console.error('AuthContext: Google 로그인 에러:', error);
-      console.error('AuthContext: 에러 메시지:', error.message);
-      
-      // 구체적인 오류 메시지 처리
-      let errorMessage = 'Google 로그인 중 오류가 발생했습니다.';
-      
-      if (error.message.includes('popup_closed') || error.message.includes('Cross-Origin-Opener-Policy')) {
-        errorMessage = '로그인 창이 차단되었습니다. 팝업 허용 후 다시 시도하거나, 새로고침 후 다시 시도해주세요.';
-      } else if (error.message.includes('network')) {
-        errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
-      } else if (error.message.includes('oauth')) {
-        errorMessage = 'Google 로그인 설정에 문제가 있습니다. 관리자에게 문의해주세요.';
-      } else if (error.message.includes('unable')) {
-        errorMessage = '세션 오류가 발생했습니다. 앱을 다시 시작해주세요.';
-      } else if (error.message.includes('404') || error.message.includes('not found')) {
-        errorMessage = '로그인 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
-      }
-      
-      toast.error(errorMessage);
-      throw error;
-    }
-  };
+    };
 
-  const loginWithApple = async () => {
-    try {
-      console.log('AuthContext: Apple 로그인 시작...');
-
-      let platform = 'web';
-      if (window.Capacitor) {
-        try {
-          platform = window.Capacitor.getPlatform();
-          console.log('AuthContext: 플랫폼:', platform);
-        } catch (error) {
-          console.log('AuthContext: 플랫폼 감지 실패:', error);
-        }
-      }
-
-      // Apple OAuth Provider 설정
-      const provider = new OAuthProvider('apple.com');
-      provider.addScope('email');
-      provider.addScope('name');
-
-      // 세션 준비
-      try {
-        await Promise.race([
-          auth.authStateReady(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 5000))
-        ]);
-        console.log('AuthContext: 세션 준비 완료');
-      } catch (error) {
-        console.log('AuthContext: 세션 초기화 타임아웃, 계속 진행');
-      }
-
-      // Apple은 리다이렉트 플로우 권장
-      console.log('AuthContext: Apple 리다이렉트 로그인 시작');
-      await signInWithRedirect(auth, provider);
-    } catch (error) {
-      console.error('AuthContext: Apple 로그인 에러:', error);
-      let errorMessage = 'Apple 로그인 중 오류가 발생했습니다.';
-      if (error?.message?.toLowerCase?.().includes('network')) {
-        errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
-      }
-      toast.error(errorMessage);
-      throw error;
-    }
-  };
-
-     // 고유 코드 생성 함수
-   const generateUniqueCode = async () => {
-     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-     let code;
-     let isUnique = false;
-     
-     while (!isUnique) {
-       code = '';
-       for (let i = 0; i < 8; i++) {
-         code += chars.charAt(Math.floor(Math.random() * chars.length));
-       }
-       
-       // Firestore에서 중복 확인
-       const codeQuery = await getDocs(query(collection(db, 'users'), where('uniqueCode', '==', code)));
-       if (codeQuery.empty) {
-         isUnique = true;
-       }
-     }
-     
-     return code;
-   };
-
-   // Firestore에 사용자 데이터 저장
-   const saveUserToFirestore = async (user) => {
-    try {
-      console.log('AuthContext: Firestore에 사용자 데이터 저장 시작');
-      
-      // 인증 상태 재확인
-      if (!user || !user.uid) {
-        console.error('AuthContext: 사용자 정보가 없음');
-        return;
-      }
-      
-      // Firebase Auth 상태 확인
-      const currentUser = auth.currentUser;
-      console.log('AuthContext: 현재 Firebase Auth 사용자:', currentUser);
-      
-      if (!currentUser) {
-        console.error('AuthContext: Firebase Auth에 로그인된 사용자가 없음');
-        return;
-      }
-      
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (!userDoc.exists()) {
-        console.log('AuthContext: 새 사용자 생성');
-        const userData = {
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName || user.email.split('@')[0],
-          user_type: null, // 사용자 타입은 나중에 선택하도록 null로 설정
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          photoURL: user.photoURL,
-          emailVerified: user.emailVerified || false
-        };
-        
-        await setDoc(userDocRef, userData);
-        console.log('AuthContext: 새 사용자 데이터 저장 완료:', userData);
-      } else {
-        console.log('AuthContext: 기존 사용자 발견, 정보 업데이트');
-        const existingData = userDoc.data();
-        console.log('AuthContext: 기존 사용자 데이터:', existingData);
-        
-        // 기존 사용자 정보 업데이트
-        const updatedData = {
-          ...existingData,
-          name: user.displayName || existingData.name,
-          photoURL: user.photoURL || existingData.photoURL,
-          updated_at: new Date().toISOString(),
-          emailVerified: user.emailVerified || existingData.emailVerified
-        };
-        
-        await setDoc(userDocRef, updatedData);
-        console.log('AuthContext: 기존 사용자 데이터 업데이트 완료:', updatedData);
-      }
-      
-      console.log('AuthContext: Firestore 저장 완료');
-    } catch (error) {
-      console.error('AuthContext: Firestore 저장 에러:', error);
-      // Firestore 저장 실패해도 로그인은 성공으로 처리
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      toast.success('로그아웃되었습니다.');
-    } catch (error) {
-      toast.error('로그아웃 중 오류가 발생했습니다.');
-      throw error;
-    }
-  };
-
-  const getUserData = async (uid) => {
-    try {
-      const userDocRef = doc(db, 'users', uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (userDoc.exists()) {
-        return userDoc.data();
-      } else {
-        console.log('사용자 데이터가 없습니다.');
-        return null;
-      }
-    } catch (error) {
-      console.error('사용자 데이터 가져오기 에러:', error);
-      return null;
-    }
-  };
-
-  const updateUserData = async (uid, data) => {
-    try {
-      const userDocRef = doc(db, 'users', uid);
-      await updateDoc(userDocRef, {
-        ...data,
-        updated_at: new Date().toISOString()
-      });
-      toast.success('프로필이 업데이트되었습니다!');
-    } catch (error) {
-      console.error('사용자 데이터 업데이트 에러:', error);
-      toast.error('프로필 업데이트 중 오류가 발생했습니다.');
-      throw error;
-    }
-  };
-
-  // 프로필 이미지 업로드 함수
-  const uploadUserProfileImage = async (file) => {
-    try {
-      if (!currentUser) {
-        throw new Error('로그인이 필요합니다.');
-      }
-
-      // 기존 프로필 이미지가 있으면 삭제
-      if (currentUser.photoURL) {
-        const oldFilePath = getFilePathFromURL(currentUser.photoURL);
-        if (oldFilePath) {
-          try {
-            await deleteFile(oldFilePath);
-          } catch (error) {
-            console.log('기존 이미지 삭제 실패:', error);
-          }
-        }
-      }
-
-      // 새 이미지 업로드
-      const downloadURL = await uploadProfileImage(file, currentUser.uid);
-      
-      // 사용자 프로필 업데이트
-      await updateUserData(currentUser.uid, { photoURL: downloadURL });
-      
-      toast.success('프로필 이미지가 업데이트되었습니다!');
-      return downloadURL;
-    } catch (error) {
-      console.error('프로필 이미지 업로드 에러:', error);
-      toast.error('프로필 이미지 업로드 중 오류가 발생했습니다.');
-      throw error;
-    }
-  };
+    handleRedirectResult();
+  }, []);
 
   const value = {
     currentUser,
-    register,
-    login,
+    loading,
+    authStateReady,
     loginWithGoogle,
     loginWithApple,
     logout,
-    getUserData,
-    updateUserData,
-    uploadUserProfileImage,
-    loading
+    updateUserType,
+    updateUserPreferences,
+    getUserData
   };
 
   return (
