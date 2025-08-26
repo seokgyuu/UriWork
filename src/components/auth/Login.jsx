@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { Capacitor } from '@capacitor/core';
+import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -222,31 +223,15 @@ const Login = () => {
     }
   };
 
-  // 앱(네이티브) 전용 Google 로그인
+  // 웹 기반 Google 로그인 (네이티브 환경에서도)
   const handleGoogleLoginNative = async () => {
     setGoogleLoading(true);
     try {
-      const platformName = window.Capacitor?.getPlatform?.() ?? 'web';
-      if (platformName === 'web') {
-        return;
-      }
-      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-      // 네이티브 Google 로그인 (시스템 계정 선택 UI)
-      await FirebaseAuthentication.signInWithGoogle();
-      // 네이티브에서 로그인된 Firebase 사용자로부터 ID 토큰 획득
-      const tokenResult = await FirebaseAuthentication.getIdToken({ forceRefresh: true });
-      const idToken = tokenResult?.token;
-      if (!idToken) throw new Error('네이티브 Firebase ID 토큰을 가져오지 못했습니다.');
-      // 웹 Firebase 세션과 동기화
-      const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-      const { auth } = await import('../../firebase');
-      const credential = GoogleAuthProvider.credential(idToken);
-      const userCred = await signInWithCredential(auth, credential);
-      console.log('Login: 네이티브 Firebase 로그인 동기화 완료', userCred.user);
-      navigate('/user-type');
+      console.log('Login: 웹 기반 Google 로그인 시작...');
+      await loginWithGoogle();
     } catch (e) {
-      console.error('Login: 네이티브 Google 로그인 실패', e);
-      alert('앱에서 Google 로그인에 실패했습니다. 인터넷/설정을 확인 후 다시 시도하세요.');
+      console.error('Login: 웹 기반 Google 로그인 실패', e);
+      alert('Google 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setGoogleLoading(false);
     }

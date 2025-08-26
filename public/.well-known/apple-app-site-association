@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "CSGJ76JU5R.com.hass.uriwork",
+        "paths": ["*", "/auth/*", "/__/auth/*"]
+      }
+    ]
+  }
+}
+

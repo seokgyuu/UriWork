@@ -87,22 +87,18 @@ const UserTypeSelection = () => {
        }
      };
 
-     // 약간의 지연을 두고 실행 (상태 안정화를 위해)
-     const timer = setTimeout(() => {
-       if (currentUser) {
-         checkUserType();
-       } else {
-         if (isMounted) {
-           setLoading(false);
-         }
-       }
-     }, 500); // 지연 시간 증가
+     // currentUser가 변경될 때마다 즉시 실행
+     if (currentUser) {
+       checkUserType();
+     } else {
+       // currentUser가 없으면 로딩 상태 해제
+       setLoading(false);
+     }
 
      return () => {
        isMounted = false;
-       clearTimeout(timer);
      };
-   }, [currentUser?.uid]); // currentUser.uid만 의존성으로 사용
+   }, [currentUser, navigate]); // currentUser 전체와 navigate를 의존성으로 사용
 
      // 고유 코드 생성 함수
    const generateUniqueCode = async () => {

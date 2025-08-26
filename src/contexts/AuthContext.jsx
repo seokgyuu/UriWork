@@ -189,7 +189,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Google 로그인
-  const loginWithGoogle = async () => {
+      const loginWithGoogle = async () => {
     try {
       console.log('⚡️  [log] - AuthContext: Google 로그인 시작...');
       const platform = isPlatform('ios') ? 'ios' : isPlatform('android') ? 'android' : 'web';
@@ -298,7 +298,7 @@ export const AuthProvider = ({ children }) => {
                       
                       console.log('⚡️  [log] - AuthContext: 강제 초기화된 Firebase 인스턴스 사용');
                       
-                    } catch (error) {
+        } catch (error) {
                       console.error('⚡️  [log] - AuthContext: Firebase 강제 초기화 실패:', error);
                       throw new Error('Firebase 모듈을 초기화할 수 없습니다: ' + error.message);
                     }
@@ -376,11 +376,11 @@ export const AuthProvider = ({ children }) => {
         } else {
           console.log('⚡️  [log] - AuthContext: AppleSignInPlugin을 찾을 수 없음, 웹 폴백 사용');
           // 웹 폴백: 리다이렉트 사용
-          const provider = new OAuthProvider('apple.com');
-          provider.addScope('email');
-          provider.addScope('name');
-          await signInWithRedirect(auth, provider);
-          return;
+            const provider = new OAuthProvider('apple.com');
+            provider.addScope('email');
+            provider.addScope('name');
+            await signInWithRedirect(auth, provider);
+            return;
         }
       } else {
         // 웹 플랫폼에서는 팝업 사용
@@ -405,9 +405,9 @@ export const AuthProvider = ({ children }) => {
       } else if (error.code === 'auth/popup-blocked') {
         // 팝업이 차단된 경우 리다이렉트 시도
         console.log('⚡️  [log] - AuthContext: 팝업 차단됨 → 리다이렉트 시도');
-        const provider = new OAuthProvider('apple.com');
-        provider.addScope('email');
-        provider.addScope('name');
+      const provider = new OAuthProvider('apple.com');
+      provider.addScope('email');
+      provider.addScope('name');
         
         await signInWithRedirect(auth, provider);
         return;
@@ -570,10 +570,10 @@ export const AuthProvider = ({ children }) => {
           console.log('⚡️  [log] - AuthContext: 리다이렉트 결과 감지:', result.user);
           await saveUserToFirestore(result.user);
         }
-      } catch (error) {
+    } catch (error) {
         console.error('⚡️  [error] - AuthContext: 리다이렉트 결과 처리 실패:', error);
-      }
-    };
+    }
+  };
 
     handleRedirectResult();
   }, []);
