@@ -7,18 +7,18 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1014872932714:android:84e05749206e590d73a513",
+        "mobilesdk_app_id": "1:1014872932714:android:e909a3527ec2240f73a513",
         "android_client_info": {
-          "package_name": "com.hass.calendar"
+          "package_name": "com.hass.uriwork"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1014872932714-r5tdj8tibin2f2i5g7jv8260h245ga7l.apps.googleusercontent.com",
+          "client_id": "1014872932714-rrsioa7adkbpfhh9ki2rtick39ecfgq5.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.hass.calendar",
-            "certificate_hash": "2184e8091838adb0e16bc6b3c1a9a4373516e145"
+            "package_name": "com.hass.uriwork",
+            "certificate_hash": "4d6a829acbec8092f7f147d0060ae57a79f8a257"
           }
         },
         {
@@ -37,6 +37,14 @@
             {
               "client_id": "1014872932714-t5qnkoa0dthrn8gobou9534bq77dii4i.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "1014872932714-31m6cnh3daqfbef6eqjajggsmrkcms81.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.hass.calendar",
+                "app_store_id": "6751185385"
+              }
             }
           ]
         }
