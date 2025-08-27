@@ -6,13 +6,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 const ProtectedRoute = ({ children, userType }) => {
   const { currentUser, loading } = useAuth();
+  const location = useLocation();
   const [userData, setUserData] = useState(null);
   const [checkingUserType, setCheckingUserType] = useState(true);
 
@@ -33,9 +34,9 @@ const ProtectedRoute = ({ children, userType }) => {
             setUserData(data);
             
             // 사용자 타입이 설정되지 않은 경우 사용자 타입 선택 페이지로 리다이렉트
-            if (!data.user_type && window.location.pathname !== '/user-type') {
+            if (!data.user_type && location.pathname !== '/user-type') {
               console.log('ProtectedRoute: 사용자 타입이 설정되지 않음, 사용자 타입 선택 페이지로 리다이렉트');
-              window.location.href = '/user-type';
+              setCheckingUserType(false);
               return;
             } else if (data.user_type) {
               console.log('ProtectedRoute: 사용자 타입이 설정됨:', data.user_type);
@@ -43,8 +44,8 @@ const ProtectedRoute = ({ children, userType }) => {
           } else {
             console.log('ProtectedRoute: Firestore 문서가 존재하지 않음');
             // 문서가 없으면 사용자 타입 선택 페이지로 리다이렉트
-            if (window.location.pathname !== '/user-type') {
-              window.location.href = '/user-type';
+            if (location.pathname !== '/user-type') {
+              setCheckingUserType(false);
               return;
             }
           }
@@ -116,6 +117,11 @@ const ProtectedRoute = ({ children, userType }) => {
     } else if (userData.user_type === 'worker') {
       return <Navigate to="/worker" replace />;
     }
+  }
+
+  // 사용자 타입이 아직 없는 경우에는 사용자 타입 선택 페이지로 이동
+  if (!userData.user_type && location.pathname !== '/user-type') {
+    return <Navigate to="/user-type" replace />;
   }
 
   return children;

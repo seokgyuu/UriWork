@@ -4,7 +4,7 @@
  */
 
 import React, { memo } from 'react';
-import { CalendarIcon, Calendar, Briefcase, Users } from 'lucide-react';
+import { Calendar, Briefcase, Users } from 'lucide-react';
 
 const Overview = memo(({ currentUser, departments, onNavigate }) => {
   return (
@@ -14,7 +14,7 @@ const Overview = memo(({ currentUser, departments, onNavigate }) => {
         onClick={() => onNavigate(`/calendar/${currentUser.uid}`)}
       >
         <div className="flex items-center">
-          <CalendarIcon className="h-8 w-8 text-green-500" />
+          <Calendar className="h-8 w-8 text-green-500" />
           <div className="ml-4">
             <p className="text-sm font-medium text-gray-600">캘린더</p>
             <p className="text-2xl font-bold text-gray-900">보기</p>

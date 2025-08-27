@@ -26,6 +26,8 @@ export default defineConfig({
     }
   },
   build: {
+    sourcemap: true,
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks: undefined // Firebase 수동 청킹 비활성화

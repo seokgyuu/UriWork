@@ -51,30 +51,47 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         console.log('[SceneDelegate] JavaScript 플러그인 등록 시작...');
 
         if (window.Capacitor && window.Capacitor.Plugins) {
-            if (window.Capacitor.Plugins.AppleSignInPlugin) {
-                delete window.Capacitor.Plugins.AppleSignInPlugin;
-                console.log('[SceneDelegate] 기존 AppleSignInPlugin 제거됨');
-            }
-
-            window.Capacitor.Plugins.AppleSignInPlugin = {
-                signIn: function() {
+            (function registerAppleSignInBridge(){
+              const makeBridge = function() {
+                return {
+                  signIn: function() {
                     return new Promise((resolve, reject) => {
-                        console.log('[JavaScript] AppleSignInPlugin.signIn() 호출됨 (Scene)');
-                        window._appleSignInResolve = resolve;
-                        window._appleSignInReject = reject;
-
-                        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.AppleSignInPlugin) {
-                            console.log('[JavaScript] 네이티브 핸들러로 메시지 전송 (Scene)');
-                            window.webkit.messageHandlers.AppleSignInPlugin.postMessage({ action: 'signIn' });
-                        } else {
-                            console.error('[JavaScript] 네이티브 핸들러를 찾을 수 없음 (Scene)');
-                            reject(new Error('네이티브 Apple Sign In 핸들러를 찾을 수 없습니다'));
-                        }
+                      console.log('[JavaScript] AppleSignInPlugin.signIn() 호출됨 (Scene)');
+                      window._appleSignInResolve = resolve;
+                      window._appleSignInReject = reject;
+                      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.AppleSignInPlugin) {
+                        console.log('[JavaScript] 네이티브 핸들러로 메시지 전송 (Scene)');
+                        window.webkit.messageHandlers.AppleSignInPlugin.postMessage({ action: 'signIn' });
+                      } else {
+                        console.error('[JavaScript] 네이티브 핸들러를 찾을 수 없음 (Scene)');
+                        reject(new Error('네이티브 Apple Sign In 핸들러를 찾을 수 없습니다'));
+                      }
                     });
+                  }
                 }
-            };
+              };
 
-            console.log('[SceneDelegate] AppleSignInPlugin JavaScript 등록 완료');
+              // 전역 독립 네임스페이스에도 바인딩 (Capacitor가 Plugins를 덮어써도 접근 가능)
+              if (!window.AppleSignInPlugin) {
+                window.AppleSignInPlugin = makeBridge();
+              }
+
+              // Capacitor Plugins에도 바인딩
+              window.Capacitor.Plugins.AppleSignInPlugin = window.AppleSignInPlugin;
+
+              // 주기적으로 재바인딩하여 덮어쓰기 대응
+              if (!window.__appleSignInRebindInterval) {
+                window.__appleSignInRebindInterval = setInterval(() => {
+                  try {
+                    if (window.Capacitor && window.Capacitor.Plugins) {
+                      window.Capacitor.Plugins.AppleSignInPlugin = window.AppleSignInPlugin;
+                    }
+                  } catch (_) {}
+                }, 1000);
+              }
+
+              console.log('[SceneDelegate] AppleSignInPlugin JavaScript 등록/재바인딩 설정 완료');
+            })();
         } else {
             console.error('[SceneDelegate] window.Capacitor.Plugins를 찾을 수 없음');
         }

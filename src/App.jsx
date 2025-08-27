@@ -6,7 +6,8 @@
  */
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -26,6 +27,7 @@ function App() {
   return (
     <AuthProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ErrorBoundary>
         <div className="App">
           <Routes>
             {/* 공개 라우트 */}
@@ -81,6 +83,7 @@ function App() {
           </Routes>
           <Toaster position="top-right" />
         </div>
+        </ErrorBoundary>
       </Router>
     </AuthProvider>
   );

@@ -345,12 +345,47 @@ export const AuthProvider = ({ children }) => {
         // iOS에서는 네이티브 Apple Sign In 사용
         console.log('⚡️  [log] - AuthContext: iOS 네이티브 Apple Sign In 시도...');
         
-        // 네이티브 Apple Sign In 플러그인 확인
-        if (window.Capacitor?.Plugins?.AppleSignInPlugin) {
+        // 네이티브 Apple Sign In 플러그인 확인 (두 경로 모두 지원)
+        const getApplePlugin = () => (window.AppleSignInPlugin || window.Capacitor?.Plugins?.AppleSignInPlugin);
+        // 플러그인이 늦게 등록되는 경우를 위해 최대 2초 대기하며 폴링
+        const waitForPlugin = async (timeoutMs = 6000, intervalMs = 150) => {
+          const start = Date.now();
+          while (Date.now() - start < timeoutMs) {
+            const plugin = getApplePlugin();
+            if (plugin && typeof plugin.signIn === 'function') return plugin;
+            await new Promise(r => setTimeout(r, intervalMs));
+          }
+          const plugin = getApplePlugin();
+          return (plugin && typeof plugin.signIn === 'function') ? plugin : null;
+        };
+
+        let plugin = await waitForPlugin();
+
+        // 플러그인이 아직 없다면 messageHandler를 직접 사용해 임시 브릿지 생성
+        if (!plugin && window.webkit?.messageHandlers?.AppleSignInPlugin) {
+          console.log('⚡️  [log] - AuthContext: messageHandler 감지 → 임시 브릿지 생성');
+          window.AppleSignInPlugin = {
+            signIn: () => new Promise((resolve, reject) => {
+              window._appleSignInResolve = resolve;
+              window._appleSignInReject = reject;
+              try {
+                window.webkit.messageHandlers.AppleSignInPlugin.postMessage({ action: 'signIn' });
+              } catch (e) {
+                reject(e);
+              }
+            })
+          };
+          if (window.Capacitor?.Plugins) {
+            window.Capacitor.Plugins.AppleSignInPlugin = window.AppleSignInPlugin;
+          }
+          plugin = window.AppleSignInPlugin;
+        }
+
+        if (plugin) {
           console.log('⚡️  [log] - AuthContext: AppleSignInPlugin 발견, 네이티브 Apple Sign In 시작...');
           
           try {
-            const result = await window.Capacitor.Plugins.AppleSignInPlugin.signIn();
+            const result = await plugin.signIn();
             console.log('⚡️  [log] - AuthContext: 네이티브 Apple Sign In 결과:', result);
             
             if (result && result.success && result.credential) {
@@ -518,13 +553,8 @@ export const AuthProvider = ({ children }) => {
             throw nativeError;
           }
         } else {
-          console.log('⚡️  [log] - AuthContext: AppleSignInPlugin을 찾을 수 없음, 웹 폴백 사용');
-          // 웹 폴백: 리다이렉트 사용
-            const provider = new OAuthProvider('apple.com');
-            provider.addScope('email');
-            provider.addScope('name');
-            await signInWithRedirect(auth, provider);
-            return;
+          console.log('⚡️  [log] - AuthContext: AppleSignInPlugin을 찾을 수 없음 → 네이티브 필요, 중단');
+          throw new Error('iOS 네이티브 Apple 로그인 플러그인을 사용할 수 없습니다.');
         }
       } else {
         // 웹 플랫폼에서는 팝업 사용
@@ -703,14 +733,14 @@ export const AuthProvider = ({ children }) => {
     initializeFirebase();
   }, []);
 
-  // 리다이렉트 결과 처리 (iOS 네이티브에서는 생략)
+  // 리다이렉트 결과 처리: iOS는 네이티브만 사용하므로 웹 리다이렉트 결과 처리 건너뜀
   useEffect(() => {
     const handleRedirectResult = async () => {
       try {
         console.log('⚡️  [log] - AuthContext: 리다이렉트 결과 처리 시작...');
         const isIOS = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'ios';
         if (isIOS) {
-          console.log('⚡️  [log] - AuthContext: iOS 네이티브 환경 - getRedirectResult 생략');
+          console.log('⚡️  [log] - AuthContext: iOS는 네이티브만 사용 - getRedirectResult 생략');
           return;
         }
         const result = await getRedirectResult(auth);

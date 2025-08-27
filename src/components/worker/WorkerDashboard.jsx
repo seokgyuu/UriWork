@@ -17,9 +17,8 @@ import {
   XCircle,
   AlertCircle,
   LogOut,
-  CalendarIcon,
   Key,
-  Building,
+  Building2,
   Plus,
   Trash2,
   RefreshCw,
@@ -30,6 +29,7 @@ import WorkerPreference from './WorkerPreference';
 import api, { workerScheduleAPI } from '../../services/api';
 
 const WorkerDashboard = () => {
+  try { console.log('[WorkerDashboard] render start'); } catch (_) {}
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
@@ -263,8 +263,8 @@ const WorkerDashboard = () => {
     }
   };
 
-  // 권한이 없는 경우 권한 요청 화면
-  if (permissionStatus?.status === 'pending' || permissionStatus?.status === 'error') {
+  // 권한이 활성화되지 않은 경우(초기 null 포함) 권한 요청 화면
+  if (!permissionStatus || permissionStatus?.status === 'pending' || permissionStatus?.status === 'error') {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* 헤더 */}
@@ -413,6 +413,14 @@ const WorkerDashboard = () => {
     { id: 'profile', name: '프로필', icon: User }
   ];
 
+  const SafeIcon = ({ Icon, className }) => {
+    try {
+      return typeof Icon === 'function' ? <Icon className={className} /> : <span className={className} />;
+    } catch (_) {
+      return <span className={className} />;
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -428,14 +436,87 @@ const WorkerDashboard = () => {
     }
   };
 
+  // 헤더/탭도 방어적으로 렌더링 (크래시 지점 추적)
+  const renderHeaderSafe = () => {
+    try {
+      return (
+        <header className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <h1 className="text-3xl font-bold text-gray-900">피고용자 대시보드</h1>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">안녕하세요, {currentUser?.displayName || '직원님'}!</span>
+                <button
+                  onClick={handleProfileClick}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  프로필
+                </button>
+                <button
+                  onClick={handleLogout}
+                  disabled={loading}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  로그아웃
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+      );
+    } catch (e) {
+      try { console.error('[WorkerDashboard] header render error', e, { currentUserPresent: !!currentUser }); } catch (_) {}
+      return (
+        <header className="bg-white shadow"><div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">대시보드</div></header>
+      );
+    }
+  };
+
+  const renderTabsSafe = () => {
+    try {
+      return (
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="flex space-x-8">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                try { console.log('[WorkerDashboard] tab entry', { id: tab.id, hasIcon: typeof Icon === 'function' }); } catch (_) {}
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center px-3 py-4 text-sm font-medium border-b-2 ${
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <SafeIcon Icon={Icon} className="h-4 w-4 mr-2" />
+                    <span>{tab.name}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      );
+    } catch (e) {
+      try { console.error('[WorkerDashboard] tabs render error', e, { activeTab }); } catch (_) {}
+      return null;
+    }
+  };
+
   const renderOverview = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {(() => { try { console.log('[WorkerDashboard] renderOverview'); } catch (_) {} return null; })()}
       <div 
         className="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
         onClick={() => setActiveTab('schedule')}
       >
         <div className="flex items-center">
-          <Calendar className="h-8 w-8 text-blue-500" />
+          <SafeIcon Icon={Calendar} className="h-8 w-8 text-blue-500" />
           <div className="ml-4">
             <p className="text-sm font-medium text-gray-600">내 스케줄</p>
             <p className="text-2xl font-bold text-gray-900">확인</p>
@@ -457,7 +538,7 @@ const WorkerDashboard = () => {
         }}
       >
         <div className="flex items-center">
-          <CalendarIcon className="h-8 w-8 text-green-500" />
+          <SafeIcon Icon={Calendar} className="h-8 w-8 text-green-500" />
           <div className="ml-4">
             <p className="text-sm font-medium text-gray-600">업체 캘린더</p>
             <p className="text-2xl font-bold text-gray-900">보기</p>
@@ -473,7 +554,7 @@ const WorkerDashboard = () => {
         onClick={() => setActiveTab('preferences')}
       >
         <div className="flex items-center">
-          <Clock className="h-8 w-8 text-purple-500" />
+          <SafeIcon Icon={Clock} className="h-8 w-8 text-purple-500" />
           <div className="ml-4">
             <p className="text-sm font-medium text-gray-600">선호도</p>
             <p className="text-2xl font-bold text-gray-900">설정</p>
@@ -487,7 +568,7 @@ const WorkerDashboard = () => {
         onClick={() => setActiveTab('profile')}
       >
         <div className="flex items-center">
-          <Building className="h-8 w-8 text-orange-500" />
+          <SafeIcon Icon={Building2} className="h-8 w-8 text-orange-500" />
           <div className="ml-4">
             <p className="text-sm font-medium text-gray-600">소속 업체</p>
             <p className="text-2xl font-bold text-gray-900">{permissionStatus?.businessName || '미설정'}</p>
@@ -540,7 +621,8 @@ const WorkerDashboard = () => {
       // 해당 날짜의 스케줄 찾기
       let daySchedule = null;
       if (isInScheduleRange && mySchedule.ai_schedule.daily_assignments) {
-        daySchedule = mySchedule.ai_schedule.daily_assignments[dayOfWeek] || [];
+        const raw = mySchedule.ai_schedule.daily_assignments[dayOfWeek];
+        daySchedule = Array.isArray(raw) ? raw : (raw ? Object.values(raw) : []);
       }
       
       return (
@@ -559,7 +641,7 @@ const WorkerDashboard = () => {
           </div>
           
           {/* 스케줄 내용 */}
-          {isInScheduleRange && daySchedule && daySchedule.length > 0 ? (
+          {isInScheduleRange && Array.isArray(daySchedule) && daySchedule.length > 0 ? (
             <div className="space-y-1">
               {daySchedule.map((assignment, idx) => (
                 <div key={idx} className="p-1 bg-purple-100 rounded text-xs border border-purple-200">
@@ -670,7 +752,8 @@ const WorkerDashboard = () => {
                                      /* 목록 보기 - 일요일부터 시작하도록 수정 */
                    <div className="grid grid-cols-7 gap-2 text-xs">
                      {['일', '월', '화', '수', '목', '금', '토'].map(day => {
-                       const dayAssignments = mySchedule.ai_schedule.daily_assignments?.[day] || [];
+                       const raw = mySchedule.ai_schedule.daily_assignments?.[day];
+                       const dayAssignments = Array.isArray(raw) ? raw : (raw ? Object.values(raw) : []);
                        return (
                          <div key={day} className="text-center">
                            <div className="font-medium text-purple-700 mb-1">{day}</div>
@@ -812,8 +895,11 @@ const WorkerDashboard = () => {
             {mySchedule.preference_schedule?.additional_preferences && (
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-3">추가 선호사항</h4>
-                <div className="text-sm text-gray-600">
-                  {mySchedule.preference_schedule.additional_preferences}
+                <div className="text-sm text-gray-600 whitespace-pre-wrap break-words">
+                  {typeof mySchedule.preference_schedule.additional_preferences === 'string'
+                    ? mySchedule.preference_schedule.additional_preferences
+                    : JSON.stringify(mySchedule.preference_schedule.additional_preferences, null, 2)
+                  }
                 </div>
               </div>
             )}
@@ -938,63 +1024,32 @@ const WorkerDashboard = () => {
     </div>
   );
 
+  // 안전한 콘텐츠 생성
+  let safeMainContent;
+  try {
+    safeMainContent = renderContent();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[WorkerDashboard] renderContent error', e, {
+      activeTab,
+      permissionStatus,
+      mySchedulePresent: !!mySchedule,
+      preferenceSchedulePresent: !!mySchedule?.preference_schedule,
+      aiSchedulePresent: !!mySchedule?.ai_schedule
+    });
+    safeMainContent = (
+      <div className="p-6 bg-red-50 border border-red-200 rounded text-red-700">
+        화면을 그리는 동안 문제가 발생했습니다. 다시 시도해 주세요.
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <h1 className="text-3xl font-bold text-gray-900">피고용자 대시보드</h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">안녕하세요, {currentUser?.displayName || '직원님'}!</span>
-              <button
-                onClick={handleProfileClick}
-                className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-              >
-                <User className="h-4 w-4 mr-2" />
-                프로필
-              </button>
-              <button
-                onClick={handleLogout}
-                disabled={loading}
-                className="flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                로그아웃
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* 탭 네비게이션 */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center px-3 py-4 text-sm font-medium border-b-2 ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 mr-2" />
-                  <span>{tab.name}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
-
-      {/* 메인 콘텐츠 */}
+      {renderHeaderSafe()}
+      {renderTabsSafe()}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {renderContent()}
+        {safeMainContent}
       </main>
     </div>
   );
