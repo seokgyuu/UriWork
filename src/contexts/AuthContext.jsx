@@ -113,6 +113,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 공용 유틸: 타임아웃/재시도
+  const createTimeout = (ms, message) => new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(message || `요청 타임아웃 (${ms}ms)`)), ms);
+  });
+
+  const withRetry = async (fn, { retries = 2, baseDelayMs = 1000 } = {}) => {
+    let attempt = 0;
+    let lastError = null;
+    while (attempt <= retries) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastError = err;
+        const code = err?.code || '';
+        const msg = err?.message || '';
+        const retryable = code === 'auth/network-request-failed' || msg.includes('타임아웃') || msg.toLowerCase().includes('network');
+        if (!retryable || attempt === retries) break;
+        const delay = baseDelayMs * Math.pow(2, attempt);
+        await new Promise(r => setTimeout(r, delay));
+        attempt += 1;
+      }
+    }
+    throw lastError || new Error('요청 실패');
+  };
+
   // 사용자 정보를 Firestore에 저장하는 함수
   const saveUserToFirestore = async (user, provider, dbInstance = null) => {
     console.log('⚡️  [log] - AuthContext: saveUserToFirestore 시작, 사용자:', user);
@@ -331,9 +356,12 @@ export const AuthProvider = ({ children }) => {
             if (result && result.success && result.credential) {
               console.log('⚡️  [log] - AuthContext: Firebase Auth로 Apple Sign In 처리...');
               
-              // Firebase 모듈이 로드되지 않은 경우 강제 초기화 시도
-              if (!auth || !db) {
-                console.log('⚡️  [log] - AuthContext: Firebase 모듈이 로드되지 않음, 강제 초기화 시도...');
+                    // Firebase 모듈이 로드되지 않은 경우 강제 초기화 시도
+      if (!auth || !db) {
+        console.log('⚡️  [log] - AuthContext: Firebase 모듈이 로드되지 않음, 강제 초기화 시도...');
+        console.log('⚡️  [log] - AuthContext: Auth 인스턴스 상태:', !!auth);
+        console.log('⚡️  [log] - AuthContext: DB 인스턴스 상태:', !!db);
+        console.log('⚡️  [log] - AuthContext: 전역 Firebase 상태:', !!window.__FIREBASE_DEBUG__);
                 
                 try {
                   const firebaseInstances = await forceInitializeFirebase();
@@ -386,18 +414,45 @@ export const AuthProvider = ({ children }) => {
               try {
                 console.log('⚡️  [log] - AuthContext: signInWithCredential 실행 시작...');
                 
-                // Google 로그인과 동일한 타임아웃 설정 (30초)
-                const timeoutPromise = new Promise((_, reject) => {
-                  setTimeout(() => {
-                    reject(new Error('Firebase Auth 타임아웃 (30초)'));
-                  }, 30000);
-                });
+                // Firebase Auth 타임아웃 설정 (60초로 증가) + 더 강력한 에러 처리
+                console.log('⚡️  [log] - AuthContext: Firebase Auth 타임아웃 설정 적용...');
                 
-                // Firebase Auth 실행 (Google 로그인과 동일한 방식)
-                const authPromise = signInWithCredential(currentAuth, credential);
-                console.log('⚡️  [log] - AuthContext: signInWithCredential Promise 생성 완료');
+                // Auth 설정 확인 및 수정
+                if (currentAuth && currentAuth.config) {
+                  try {
+                    console.log('⚡️  [log] - AuthContext: 현재 Auth 설정:', currentAuth.config);
+                    console.log('⚡️  [log] - AuthContext: Auth 앱 참조:', !!currentAuth.app);
+                    console.log('⚡️  [log] - AuthContext: Auth 프로젝트 ID:', currentAuth.app?.options?.projectId);
+                    
+                    // Firebase Auth 연결 상태 테스트
+                    console.log('⚡️  [log] - AuthContext: Firebase Auth 연결 상태 테스트 시작...');
+                    console.log('⚡️  [log] - AuthContext: currentAuth.tenantId:', currentAuth.tenantId);
+                    console.log('⚡️  [log] - AuthContext: currentAuth.languageCode:', currentAuth.languageCode);
+                    console.log('⚡️  [log] - AuthContext: currentAuth.settings:', currentAuth.settings);
+                    
+                    // 네트워크 연결 상태 확인
+                    if (navigator.onLine) {
+                      console.log('⚡️  [log] - AuthContext: 네트워크 연결 상태: 온라인');
+                    } else {
+                      console.log('⚡️  [log] - AuthContext: 네트워크 연결 상태: 오프라인');
+                    }
+                    
+                  } catch (configError) {
+                    console.error('⚡️  [error] - AuthContext: Auth 설정 확인 중 오류:', configError);
+                  }
+                }
                 
-                const userCredential = await Promise.race([authPromise, timeoutPromise]);
+                // Firebase Auth 실행: 타임아웃 + 재시도
+                const attemptSignIn = async () => {
+                  const authPromise = signInWithCredential(currentAuth, credential);
+                  console.log('⚡️  [log] - AuthContext: signInWithCredential Promise 생성 완료');
+                  return await Promise.race([
+                    authPromise,
+                    createTimeout(20000, 'Firebase Auth 타임아웃 (20초) - 서버 연결 실패')
+                  ]);
+                };
+
+                const userCredential = await withRetry(attemptSignIn, { retries: 2, baseDelayMs: 1500 });
                 console.log('⚡️  [log] - AuthContext: signInWithCredential 완료!');
                 
                 const user = userCredential.user;
@@ -648,21 +703,25 @@ export const AuthProvider = ({ children }) => {
     initializeFirebase();
   }, []);
 
-  // 리다이렉트 결과 처리
+  // 리다이렉트 결과 처리 (iOS 네이티브에서는 생략)
   useEffect(() => {
     const handleRedirectResult = async () => {
       try {
         console.log('⚡️  [log] - AuthContext: 리다이렉트 결과 처리 시작...');
-        
+        const isIOS = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'ios';
+        if (isIOS) {
+          console.log('⚡️  [log] - AuthContext: iOS 네이티브 환경 - getRedirectResult 생략');
+          return;
+        }
         const result = await getRedirectResult(auth);
         if (result) {
           console.log('⚡️  [log] - AuthContext: 리다이렉트 결과 감지:', result.user);
           await saveUserToFirestore(result.user);
         }
-    } catch (error) {
+      } catch (error) {
         console.error('⚡️  [error] - AuthContext: 리다이렉트 결과 처리 실패:', error);
-    }
-  };
+      }
+    };
 
     handleRedirectResult();
   }, []);

@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.hass.calendar"
+    namespace "com.hass.uriwork"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.hass.calendar"
+        applicationId "com.hass.uriwork"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -34,36 +34,55 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("[Firebase] GoogleService-Info.plist path: \(path)")
         }
         
-        // Window 설정 (Scene 없이)
-        if window == nil {
-            window = UIWindow(frame: UIScreen.main.bounds)
+        // Window 설정 (iOS 12 이하는 AppDelegate에서 처리, iOS 13+는 SceneDelegate 처리)
+        if #available(iOS 13.0, *) {
+            // iOS 13+에서는 SceneDelegate가 윈도우를 관리합니다.
+        } else {
+            if window == nil {
+                window = UIWindow(frame: UIScreen.main.bounds)
+            }
+            
+            // Main.storyboard에서 초기 ViewController 설정
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            if let viewController = storyboard.instantiateInitialViewController() {
+                window?.rootViewController = viewController
+            }
+            
+            // Window를 keyAndVisible로 설정
+            window?.makeKeyAndVisible()
         }
         
-        // Main.storyboard에서 초기 ViewController 설정
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        if let viewController = storyboard.instantiateInitialViewController() {
-            window?.rootViewController = viewController
-        }
-        
-        // Window를 keyAndVisible로 설정
-        window?.makeKeyAndVisible()
-        
-        // AppleSignInPlugin 초기화
+        // AppleSignInPlugin 초기화 (iOS 12 이하에서만 AppDelegate가 직접 등록)
         appleSignInPlugin = AppleSignInPlugin()
-        
-        // WebView 로드 후 AppleSignInPlugin 등록 - 즉시 시도
-        DispatchQueue.main.async {
-            print("[AppDelegate] AppleSignInPlugin 즉시 등록 시도...")
-            self.registerAppleSignInPlugin()
-        }
-        
-        // 추가 등록 시도 (백업)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            print("[AppDelegate] AppleSignInPlugin 백업 등록 시도...")
-            self.registerAppleSignInPlugin()
+
+        if #available(iOS 13.0, *) {
+            // iOS 13+에서는 SceneDelegate에서 등록을 처리하므로 여기서는 건너뜁니다.
+        } else {
+            // WebView 로드 후 AppleSignInPlugin 등록 - 즉시 시도
+            DispatchQueue.main.async {
+                print("[AppDelegate] AppleSignInPlugin 즉시 등록 시도...")
+                self.registerAppleSignInPlugin()
+            }
+            
+            // 추가 등록 시도 (백업)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                print("[AppDelegate] AppleSignInPlugin 백업 등록 시도...")
+                self.registerAppleSignInPlugin()
+            }
         }
         
         return true
+    }
+
+    // MARK: - UISceneSession Lifecycle
+    @available(iOS 13.0, *)
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
+    }
+
+    @available(iOS 13.0, *)
+    func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
+        // 리소스 정리 필요 시 처리
     }
 
     // MARK: - Core Data stack
