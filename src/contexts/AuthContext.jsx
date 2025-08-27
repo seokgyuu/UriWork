@@ -138,11 +138,11 @@ export const AuthProvider = ({ children }) => {
       console.log('⚡️  [log] - AuthContext: 기존 사용자 문서 확인 시작...');
       
       // Firestore 작업에 타임아웃 추가 (30초로 증가)
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Firestore 작업 타임아웃 (30초)'));
-        }, 30000); // 30초 타임아웃으로 증가
-      });
+                      const timeoutPromise = new Promise((_, reject) => {
+                  setTimeout(() => {
+                    reject(new Error('Firestore 작업 타임아웃 (60초)'));
+                  }, 60000); // 60초 타임아웃으로 증가
+                });
       
       // 기존 사용자 확인
       const checkUserPromise = getDoc(userRef);
@@ -211,11 +211,11 @@ export const AuthProvider = ({ children }) => {
           console.log('⚡️  [log] - AuthContext: 재시도 데이터:', simpleData);
           
           // 재시도 시에는 더 짧은 타임아웃 사용
-          const retryTimeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => {
-              reject(new Error('Firestore 재시도 타임아웃 (15초)'));
-            }, 15000);
-          });
+                              const retryTimeoutPromise = new Promise((_, reject) => {
+                      setTimeout(() => {
+                        reject(new Error('Firestore 재시도 타임아웃 (30초)'));
+                      }, 30000);
+                    });
           
           await Promise.race([
             setDoc(userRef, simpleData, { merge: true }),
@@ -377,11 +377,11 @@ export const AuthProvider = ({ children }) => {
                 console.log('⚡️  [log] - AuthContext: 재초기화된 Firebase 인스턴스:', !!currentAuth, !!currentDb);
               }
               
-              // 3초 타임아웃 설정 (10초에서 더 단축)
+              // 30초 타임아웃 설정 (iOS 연결 안정성 향상)
               const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => {
-                  reject(new Error('Firebase Auth 타임아웃 (3초)'));
-                }, 3000);
+                  reject(new Error('Firebase Auth 타임아웃 (30초)'));
+                }, 30000);
               });
               
               try {
@@ -408,8 +408,8 @@ export const AuthProvider = ({ children }) => {
                     console.error(`⚡️  [error] - AuthContext: Firebase Auth 시도 ${attempt}/3 실패:`, attemptError.message);
                     
                     if (attempt < 3) {
-                      console.log(`⚡️  [log] - AuthContext: 0.5초 후 재시도...`);
-                      await new Promise(resolve => setTimeout(resolve, 500)); // 0.5초 대기
+                      console.log(`⚡️  [log] - AuthContext: 2초 후 재시도...`);
+                      await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 대기
                     }
                   }
                 }
@@ -495,6 +495,17 @@ export const AuthProvider = ({ children }) => {
                       
                       console.log('⚡️  [log] - AuthContext: 생성된 사용자 객체:', mockUser);
                       
+                      // Firestore 연결 테스트
+                      try {
+                        console.log('⚡️  [log] - AuthContext: Firestore 연결 테스트 시작...');
+                        const testDoc = doc(currentDb, 'test', 'connection_test');
+                        await setDoc(testDoc, { test: true, timestamp: new Date().toISOString() });
+                        console.log('⚡️  [log] - AuthContext: Firestore 연결 테스트 성공!');
+                        await deleteDoc(testDoc); // 테스트 문서 삭제
+                      } catch (testError) {
+                        console.error('⚡️  [log] - AuthContext: Firestore 연결 테스트 실패:', testError);
+                      }
+                      
                       // Firestore에 저장 시도
                       console.log('⚡️  [log] - AuthContext: Firestore 저장 시작...');
                       const saveResult = await saveUserToFirestore(mockUser, 'apple', currentDb);
@@ -527,59 +538,6 @@ export const AuthProvider = ({ children }) => {
                   } else {
                     throw new Error('유효하지 않은 Apple ID 토큰');
                   }
-                  
-                  console.log('⚡️  [log] - AuthContext: 생성된 사용자 객체:', mockUser);
-                  
-                  // Firestore 저장 시작
-                  console.log('⚡️  [log] - AuthContext: Firestore 저장 시작...');
-                  console.log('⚡️  [log] - AuthContext: 사용자 정보:', {
-                    uid: mockUser.uid,
-                    email: mockUser.email,
-                    displayName: mockUser.displayName,
-                    providerId: mockUser.providerId
-                  });
-                  console.log('⚡️  [log] - AuthContext: Firestore 인스턴스 확인:', !!currentDb);
-                  console.log('⚡️  [log] - AuthContext: Firestore 앱 참조:', !!currentDb?.app);
-                  
-                  try {
-                    const saveResult = await saveUserToFirestore(mockUser, 'apple', currentDb);
-                    if (saveResult) {
-                      console.log('⚡️  [log] - AuthContext: Firestore 저장 완료!');
-                    } else {
-                      console.log('⚡️  [log] - AuthContext: Firestore 저장 실패했지만 로그인은 계속 진행');
-                    }
-                  } catch (firestoreError) {
-                    console.error('⚡️  [error] - AuthContext: Firestore 저장 중 예외 발생:', firestoreError);
-                    console.log('⚡️  [log] - AuthContext: Firestore 저장 실패했지만 로그인은 성공으로 처리');
-                  }
-                  
-                  console.log('⚡️  [log] - AuthContext: Apple 로그인 완료 (Firebase Auth 우회)!');
-                  
-                  // 인증 상태를 즉시 업데이트하여 화면 전환 가능하게 함
-                  console.log('⚡️  [log] - AuthContext: 인증 상태 업데이트 시작...');
-                  
-                  // 강제로 상태 업데이트 (여러 방법 시도)
-                  setCurrentUser(mockUser);
-                  
-                  // 전역 상태도 직접 설정
-                  if (window.__FIREBASE_DEBUG__) {
-                    window.__FIREBASE_DEBUG__.currentUser = mockUser;
-                    console.log('⚡️  [log] - AuthContext: 전역 상태에도 사용자 설정 완료');
-                  }
-                  
-                  // 약간의 지연 후 상태 재설정 (상태 안정화를 위해)
-                  setTimeout(() => {
-                    console.log('⚡️  [log] - AuthContext: 상태 안정화를 위한 재설정...');
-                    setCurrentUser(null);
-                    setTimeout(() => {
-                      setCurrentUser(mockUser);
-                      console.log('⚡️  [log] - AuthContext: 상태 재설정 완료');
-                    }, 100);
-                  }, 100);
-                  
-                  console.log('⚡️  [log] - AuthContext: 인증 상태 업데이트 완료:', mockUser);
-                  
-                  return mockUser;
                 } else if (authError.code) {
                   throw new Error(`Firebase Auth 실패 (${authError.code}): ${authError.message || '알 수 없는 오류'}`);
                 } else {

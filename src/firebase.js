@@ -64,23 +64,36 @@ export const auth = getAuth(app);
 // Firestore를 long-polling으로 초기화 (WebView 안정성 향상)
 export const db = getFirestore(app);
 
-// Firestore 설정을 long-polling으로 구성
-if (db) {
-  try {
-    // long-polling 설정으로 WebView에서의 연결 안정성 향상
-    console.log('⚡️  [firebase.js] Firestore long-polling 설정 적용...');
-    
-    // Firestore 설정을 long-polling으로 강제 설정
-    // 이는 WebView 환경에서 더 안정적인 연결을 제공합니다
-    console.log('⚡️  [firebase.js] Firestore 연결 안정화 완료');
-    
-    // 추가: Firestore 설정 확인
-    console.log('⚡️  [firebase.js] Firestore 앱 참조:', !!db.app);
-    console.log('⚡️  [firebase.js] Firestore 프로젝트 ID:', db.app?.options?.projectId);
-  } catch (error) {
-    console.warn('⚡️  [firebase.js] Firestore 설정 적용 중 경고:', error.message);
+  // Firestore 설정을 long-polling으로 구성
+  if (db) {
+    try {
+      // long-polling 설정으로 WebView에서의 연결 안정성 향상
+      console.log('⚡️  [firebase.js] Firestore long-polling 설정 적용...');
+      
+      // Firestore 설정을 long-polling으로 강제 설정 (iOS WebView 안정화)
+      // Firebase 11.x에서는 settings 함수가 다르게 작동할 수 있음
+      if (typeof db.settings === 'function') {
+        db.settings({
+          experimentalForceLongPolling: true, // 강제 활성화
+          experimentalAutoDetectLongPolling: false, // 자동 감지 비활성화
+          useFetchStreams: false, // fetch streams 비활성화로 안정성 향상
+          cacheSizeBytes: 100 * 1024 * 1024, // 캐시 크기 증가 (100MB)
+          ignoreUndefinedProperties: true // undefined 속성 무시
+        });
+        console.log('⚡️  [firebase.js] Firestore long-polling 설정 적용 완료');
+      } else {
+        console.log('⚡️  [firebase.js] Firestore settings 함수를 찾을 수 없음, 기본 설정 사용');
+      }
+      
+      console.log('⚡️  [firebase.js] Firestore 연결 안정화 완료');
+      
+      // 추가: Firestore 설정 확인
+      console.log('⚡️  [firebase.js] Firestore 앱 참조:', !!db.app);
+      console.log('⚡️  [firebase.js] Firestore 프로젝트 ID:', db.app?.options?.projectId);
+    } catch (error) {
+      console.warn('⚡️  [firebase.js] Firestore 설정 적용 중 경고:', error.message);
+    }
   }
-}
 
 export const storage = getStorage(app);
 

@@ -30,11 +30,11 @@ const UserTypeSelection = () => {
            const userDocRef = doc(db, 'users', currentUser.uid);
            
            // Firestore 조회에 3초 타임아웃 추가
-               const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('Firestore 조회 타임아웃 (30초)'));
-      }, 30000); // 30초 타임아웃으로 증가
-    });
+                       const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Firestore 조회 타임아웃 (60초)'));
+          }, 60000); // 60초 타임아웃으로 증가
+        });
            
            const userDocPromise = getDoc(userDocRef);
            const userDoc = await Promise.race([userDocPromise, timeoutPromise]);

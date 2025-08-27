@@ -54,11 +54,8 @@ const Login = () => {
               window.__FIREBASE_DEBUG__.currentUser = null;
               console.log('Login: 전역 상태에서 currentUser 제거 (무한 루프 방지)');
             }
-            // AuthContext의 currentUser도 안전하게 제거
-            if (setCurrentUser) {
-              setCurrentUser(null);
-              console.log('Login: AuthContext currentUser 제거 (무한 루프 방지)');
-            }
+            // AuthContext의 currentUser는 AuthContext 내부에서 관리됨
+            console.log('Login: AuthContext currentUser는 AuthContext에서 관리됨');
           }, 100);
           
         } catch (navError) {
@@ -262,11 +259,8 @@ const Login = () => {
               window.__FIREBASE_DEBUG__.currentUser = null;
               console.log('Login: 전역 상태에서 currentUser 제거 (무한 루프 방지)');
             }
-            // AuthContext의 currentUser도 안전하게 제거
-            if (setCurrentUser) {
-              setCurrentUser(null);
-              console.log('Login: AuthContext currentUser 제거 (무한 루프 방지)');
-            }
+            // AuthContext의 currentUser는 AuthContext 내부에서 관리됨
+            console.log('Login: AuthContext currentUser는 AuthContext에서 관리됨');
           }, 100);
           
         } catch (navError) {

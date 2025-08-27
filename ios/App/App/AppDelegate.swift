@@ -27,12 +27,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Firebase 옵션 확인
         if let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
            let options = FirebaseOptions(contentsOfFile: path) {
-            print("[Firebase] options.bundleID=\(options.bundleID ?? "nil")")
-            print("[Firebase] options.googleAppID=\(options.googleAppID ?? "nil")")
-            print("[Firebase] options.clientID=\(options.clientID ?? "nil")")
-            print("[Firebase] options.projectID=\(options.projectID ?? "nil")")
+            print("[Firebase] options.bundleID=\(options.bundleID)")
+            print("[Firebase] options.googleAppID=\(options.googleAppID)")
+            print("[Firebase] options.clientID=\(options.clientID)")
+            print("[Firebase] options.projectID=\(options.projectID)")
             print("[Firebase] GoogleService-Info.plist path: \(path)")
         }
+        
+        // Window 설정 (Scene 없이)
+        if window == nil {
+            window = UIWindow(frame: UIScreen.main.bounds)
+        }
+        
+        // Main.storyboard에서 초기 ViewController 설정
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        if let viewController = storyboard.instantiateInitialViewController() {
+            window?.rootViewController = viewController
+        }
+        
+        // Window를 keyAndVisible로 설정
+        window?.makeKeyAndVisible()
         
         // AppleSignInPlugin 초기화
         appleSignInPlugin = AppleSignInPlugin()
@@ -50,20 +64,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         return true
-    }
-
-    // MARK: UISceneSession Lifecycle
-
-    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
-        // Called when a new scene session is being created.
-        // Use this method to select a configuration to create the new scene with.
-        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
-    }
-
-    func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
-        // Called when the user discards a scene session.
-        // If any sessions were discarded while the application was not running, this will be called shortly after application:didFinishLaunchingWithOptions.
-        // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
 
     // MARK: - Core Data stack
@@ -254,17 +254,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                             }
                             
                             // UIView에서 WKWebView 찾기
-                            if let contentView = subSubview as? UIView {
+                            if subSubview is UIView {
                                 print("[AppDelegate] UIView 발견, WKWebView 검색 중...")
                                 
                                 // UIView의 superview가 WKWebView인지 확인
-                                if let webView = contentView.superview as? WKWebView {
+                                if let webView = subSubview.superview as? WKWebView {
                                     print("[AppDelegate] UIView의 superview에서 WKWebView 찾음")
                                     return webView
                                 }
                                 
                                 // UIView의 하위 뷰에서 WKWebView 찾기
-                                for (deepIndex, deepSubview) in contentView.subviews.enumerated() {
+                                for (deepIndex, deepSubview) in subSubview.subviews.enumerated() {
                                     print("[AppDelegate] UIView 하위 뷰 \(deepIndex): \(type(of: deepSubview))")
                                     if let webView = deepSubview as? WKWebView {
                                         print("[AppDelegate] UIView 하위에서 WKWebView 찾음")
