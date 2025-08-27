@@ -331,30 +331,33 @@ export const AuthProvider = ({ children }) => {
             if (result && result.success && result.credential) {
               console.log('⚡️  [log] - AuthContext: Firebase Auth로 Apple Sign In 처리...');
               
-                  // Firebase 모듈이 로드되지 않은 경우 강제 초기화 시도
-                  if (!auth || !db) {
-                    console.log('⚡️  [log] - AuthContext: Firebase 모듈이 로드되지 않음, 강제 초기화 시도...');
-                    
-                    try {
-                      const firebaseInstances = await forceInitializeFirebase();
-                      console.log('⚡️  [log] - AuthContext: Firebase 강제 초기화 성공:', firebaseInstances);
-                      
-                      // 강제 초기화된 Firebase 인스턴스 사용
-                      const { auth: forceAuth, db: forceDb } = firebaseInstances;
-                      
-                      if (!forceAuth || !forceDb) {
-                        throw new Error('강제 초기화 후에도 Firebase 인스턴스를 찾을 수 없습니다');
-                      }
-                      
-                      console.log('⚡️  [log] - AuthContext: 강제 초기화된 Firebase 인스턴스 사용');
-                      
-        } catch (error) {
-                      console.error('⚡️  [log] - AuthContext: Firebase 강제 초기화 실패:', error);
-                      throw new Error('Firebase 모듈을 초기화할 수 없습니다: ' + error.message);
-                    }
+              // Firebase 모듈이 로드되지 않은 경우 강제 초기화 시도
+              if (!auth || !db) {
+                console.log('⚡️  [log] - AuthContext: Firebase 모듈이 로드되지 않음, 강제 초기화 시도...');
+                
+                try {
+                  const firebaseInstances = await forceInitializeFirebase();
+                  console.log('⚡️  [log] - AuthContext: Firebase 강제 초기화 성공:', firebaseInstances);
+                  
+                  // 강제 초기화된 Firebase 인스턴스 사용
+                  const { auth: forceAuth, db: forceDb } = firebaseInstances;
+                  
+                  if (!forceAuth || !forceDb) {
+                    throw new Error('강제 초기화 후에도 Firebase 인스턴스를 찾을 수 없습니다');
                   }
+                  
+                  console.log('⚡️  [log] - AuthContext: 강제 초기화된 Firebase 인스턴스 사용');
+                  
+                } catch (error) {
+                  console.error('⚡️  [log] - AuthContext: Firebase 강제 초기화 실패:', error);
+                  throw new Error('Firebase 모듈을 초기화할 수 없습니다: ' + error.message);
+                }
+              }
               
-              // OAuthProvider로 Apple Sign In 처리
+              // Google 로그인과 동일한 방식으로 Apple OAuth Provider 사용
+              console.log('⚡️  [log] - AuthContext: Apple OAuth Provider로 Firebase Auth 처리...');
+              
+              // Apple ID Token으로 credential 생성 (올바른 방식)
               const provider = new OAuthProvider('apple.com');
               const credential = provider.credential({
                 idToken: result.credential.idToken,
@@ -377,57 +380,35 @@ export const AuthProvider = ({ children }) => {
                 console.log('⚡️  [log] - AuthContext: 재초기화된 Firebase 인스턴스:', !!currentAuth, !!currentDb);
               }
               
-              // 30초 타임아웃 설정 (iOS 연결 안정성 향상)
-              const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
-                  reject(new Error('Firebase Auth 타임아웃 (30초)'));
-                }, 30000);
-              });
+              // Google 로그인과 동일한 방식으로 처리
+              console.log('⚡️  [log] - AuthContext: Google 로그인과 동일한 방식으로 Apple 로그인 처리...');
               
               try {
                 console.log('⚡️  [log] - AuthContext: signInWithCredential 실행 시작...');
-                console.log('⚡️  [log] - AuthContext: 타임아웃 설정: 60초');
                 
-                // Firebase Auth 재시도 로직 (최대 3회)
-                let userCredential = null;
-                let lastError = null;
+                // Google 로그인과 동일한 타임아웃 설정 (30초)
+                const timeoutPromise = new Promise((_, reject) => {
+                  setTimeout(() => {
+                    reject(new Error('Firebase Auth 타임아웃 (30초)'));
+                  }, 30000);
+                });
                 
-                for (let attempt = 1; attempt <= 3; attempt++) {
-                  try {
-                    console.log(`⚡️  [log] - AuthContext: Firebase Auth 시도 ${attempt}/3...`);
-                    
-                    const authPromise = signInWithCredential(currentAuth, credential);
-                    console.log('⚡️  [log] - AuthContext: signInWithCredential Promise 생성 완료');
-                    
-                    userCredential = await Promise.race([authPromise, timeoutPromise]);
-                    console.log(`⚡️  [log] - AuthContext: Firebase Auth 성공 (시도 ${attempt}/3)!`);
-                    break; // 성공하면 루프 종료
-                    
-                  } catch (attemptError) {
-                    lastError = attemptError;
-                    console.error(`⚡️  [error] - AuthContext: Firebase Auth 시도 ${attempt}/3 실패:`, attemptError.message);
-                    
-                    if (attempt < 3) {
-                      console.log(`⚡️  [log] - AuthContext: 2초 후 재시도...`);
-                      await new Promise(resolve => setTimeout(resolve, 2000)); // 2초 대기
-                    }
-                  }
-                }
+                // Firebase Auth 실행 (Google 로그인과 동일한 방식)
+                const authPromise = signInWithCredential(currentAuth, credential);
+                console.log('⚡️  [log] - AuthContext: signInWithCredential Promise 생성 완료');
                 
-                if (!userCredential) {
-                  throw lastError || new Error('Firebase Auth 모든 시도 실패');
-                }
-                
+                const userCredential = await Promise.race([authPromise, timeoutPromise]);
                 console.log('⚡️  [log] - AuthContext: signInWithCredential 완료!');
+                
                 const user = userCredential.user;
                 console.log('⚡️  [log] - AuthContext: Firebase Auth Apple 로그인 성공:', user);
                 
-                // Firebase Auth 성공 시에도 인증 상태 즉시 업데이트
+                // Firebase Auth 성공 시 인증 상태 즉시 업데이트
                 console.log('⚡️  [log] - AuthContext: Firebase Auth 성공 후 인증 상태 업데이트 시작...');
                 setCurrentUser(user);
                 console.log('⚡️  [log] - AuthContext: Firebase Auth 성공 후 인증 상태 업데이트 완료:', user);
                 
-                // 사용자 정보를 Firestore에 저장
+                // 사용자 정보를 Firestore에 저장 (Google 로그인과 동일한 방식)
                 try {
                   console.log('⚡️  [log] - AuthContext: Firestore 저장 시작...');
                   console.log('⚡️  [log] - AuthContext: 사용자 정보:', {
@@ -447,7 +428,7 @@ export const AuthProvider = ({ children }) => {
                   console.error('⚡️  [error] - AuthContext: Firestore 에러 메시지:', firestoreError.message);
                   console.error('⚡️  [error] - AuthContext: Firestore 에러 스택:', firestoreError.stack);
                   
-                  // Firestore 저장 실패해도 로그인은 성공으로 처리
+                  // Firestore 저장 실패해도 로그인은 성공으로 처리 (Google 로그인과 동일)
                   console.log('⚡️  [log] - AuthContext: Firestore 저장 실패했지만 로그인은 성공으로 처리');
                 }
                 
@@ -462,86 +443,15 @@ export const AuthProvider = ({ children }) => {
                 console.error('⚡️  [error] - AuthContext: 에러 스택:', authError.stack);
                 console.error('⚡️  [error] - AuthContext: 에러 전체 객체:', JSON.stringify(authError, null, 2));
                 
-                // Apple Sign In은 성공했지만 Firebase Auth에서 실패한 경우
-                if (authError.message && authError.message.includes('타임아웃')) {
-                  console.log('⚡️  [log] - AuthContext: Firebase Auth 타임아웃 발생, 즉시 우회 로직 실행...');
-                  
-                  // Apple ID에서 실제 사용자 ID 추출 (JWT 토큰 디코딩)
-                  const tokenParts = result.credential.idToken.split('.');
-                  if (tokenParts.length === 3) {
-                    try {
-                      const payload = JSON.parse(atob(tokenParts[1]));
-                      const appleUserId = payload.sub; // Apple의 실제 사용자 ID
-                      console.log('⚡️  [log] - AuthContext: Apple 실제 사용자 ID 추출됨:', appleUserId);
-                      
-                      // Apple ID를 기반으로 일관된 UID 생성
-                      const consistentUid = `apple_${appleUserId.replace(/[^a-zA-Z0-9]/g, '')}`;
-                      console.log('⚡️  [log] - AuthContext: 일관된 UID 생성:', consistentUid);
-                      
-                      // 일관된 UID로 사용자 객체 생성
-                      const mockUser = {
-                        uid: consistentUid,
-                        email: payload.email || 'seokgyu123456@gmail.com',
-                        displayName: payload.email ? payload.email.split('@')[0] : 'Apple User',
-                        providerId: 'apple.com',
-                        isAnonymous: false,
-                        emailVerified: true,
-                        photoURL: null,
-                        metadata: {
-                          creationTime: new Date().toISOString(),
-                          lastSignInTime: new Date().toISOString()
-                        }
-                      };
-                      
-                      console.log('⚡️  [log] - AuthContext: 생성된 사용자 객체:', mockUser);
-                      
-                      // Firestore 연결 테스트
-                      try {
-                        console.log('⚡️  [log] - AuthContext: Firestore 연결 테스트 시작...');
-                        const testDoc = doc(currentDb, 'test', 'connection_test');
-                        await setDoc(testDoc, { test: true, timestamp: new Date().toISOString() });
-                        console.log('⚡️  [log] - AuthContext: Firestore 연결 테스트 성공!');
-                        await deleteDoc(testDoc); // 테스트 문서 삭제
-                      } catch (testError) {
-                        console.error('⚡️  [log] - AuthContext: Firestore 연결 테스트 실패:', testError);
-                      }
-                      
-                      // Firestore에 저장 시도
-                      console.log('⚡️  [log] - AuthContext: Firestore 저장 시작...');
-                      const saveResult = await saveUserToFirestore(mockUser, 'apple', currentDb);
-                      
-                      if (saveResult) {
-                        console.log('⚡️  [log] - AuthContext: Firestore 저장 성공!');
-                      } else {
-                        console.log('⚡️  [log] - AuthContext: Firestore 저장 실패했지만 로그인은 계속 진행');
-                      }
-                      
-                      // 사용자 상태 업데이트
-                      console.log('⚡️  [log] - AuthContext: 인증 상태 업데이트 시작...');
-                      setCurrentUser(mockUser);
-                      
-                      // 전역 상태에도 사용자 설정
-                      if (window.__FIREBASE_DEBUG__) {
-                        window.__FIREBASE_DEBUG__.currentUser = mockUser;
-                        console.log('⚡️  [log] - AuthContext: 전역 상태에도 사용자 설정 완료');
-                      }
-                      
-                      console.log('⚡️  [log] - AuthContext: 인증 상태 업데이트 완료:', mockUser);
-                      console.log('⚡️  [log] - AuthContext: Apple 로그인 완료 (Firebase Auth 우회)!');
-                      
-                      return mockUser;
-                      
-                    } catch (decodeError) {
-                      console.error('⚡️  [error] - AuthContext: JWT 토큰 디코딩 실패:', decodeError);
-                      throw new Error('Apple ID 토큰 처리 실패');
-                    }
-                  } else {
-                    throw new Error('유효하지 않은 Apple ID 토큰');
-                  }
-                } else if (authError.code) {
-                  throw new Error(`Firebase Auth 실패 (${authError.code}): ${authError.message || '알 수 없는 오류'}`);
+                // Google 로그인과 동일한 에러 처리
+                if (authError.code === 'auth/popup-closed-by-user') {
+                  throw new Error('Apple 로그인이 취소되었습니다.');
+                } else if (authError.code === 'auth/popup-blocked') {
+                  throw new Error('Apple 로그인 팝업이 차단되었습니다.');
+                } else if (authError.message && authError.message.includes('타임아웃')) {
+                  throw new Error('Apple 로그인 시간이 초과되었습니다. 다시 시도해주세요.');
                 } else {
-                  throw new Error(`Firebase Auth 실패: ${authError.message || '알 수 없는 오류'}`);
+                  throw new Error(`Apple 로그인 실패: ${authError.message || '알 수 없는 오류'}`);
                 }
               }
               
