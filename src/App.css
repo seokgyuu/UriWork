@@ -1,1 +1,69 @@
-/* 추가적인 커스텀 스타일이 필요한 경우 여기에 작성하세요 */
+/* 전역 반응형 타이포그래피 및 유틸리티 */
+:root {
+  --fluid-font-min: 14px;
+  --fluid-font-max: 18px;
+}
+
+html {
+  /* 화면 크기에 따라 rem 기준 크기 자동 스케일 */
+  font-size: clamp(var(--fluid-font-min), 1rem + 0.6vw, var(--fluid-font-max));
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 컨테이너 패딩을 화면에 맞춰 유동적으로 */
+.container-responsive {
+  padding-left: clamp(12px, 3vw, 24px);
+  padding-right: clamp(12px, 3vw, 24px);
+}
+
+/* 그리드 갭 유동 */
+.grid-gap-responsive {
+  gap: clamp(8px, 2vw, 24px);
+}
+
+/* 카드 패딩 유동 */
+.card-padding-responsive {
+  padding: clamp(12px, 2.4vw, 24px);
+}
+
+/* 반응형 텍스트 유틸 */
+.text-responsive-xs { font-size: clamp(0.75rem, 1.2vw, 0.875rem); }
+.text-responsive-sm { font-size: clamp(0.875rem, 1.4vw, 1rem); }
+.text-responsive-base { font-size: clamp(1rem, 1.6vw, 1.125rem); }
+.text-responsive-lg { font-size: clamp(1.125rem, 2vw, 1.25rem); }
+.text-responsive-xl { font-size: clamp(1.25rem, 2.4vw, 1.5rem); }
+.text-responsive-2xl { font-size: clamp(1.5rem, 3vw, 1.875rem); }
+
+/* 탭 바 가로 스크롤 */
+.responsive-tabs {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.responsive-tabs::-webkit-scrollbar { height: 6px; }
+.responsive-tabs::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.15); border-radius: 9999px; }
+
+/* iOS 안전영역 상단 패딩 및 고정 헤더, 터치 타겟 확장 */
+.safe-area-top {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+}
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.touch-target {
+  min-height: 44px;
+}

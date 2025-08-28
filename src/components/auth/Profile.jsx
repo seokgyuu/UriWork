@@ -293,12 +293,12 @@ const Profile = () => {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <h1 className="text-3xl font-bold text-gray-900">프로필</h1>
+        <div className="max-w-7xl mx-auto container-responsive">
+          <div className="flex justify-between items-center py-4 sm:py-6">
+            <h1 className="text-responsive-2xl sm:text-3xl font-bold text-gray-900">프로필</h1>
             <button
               onClick={() => navigate(-1)}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-responsive-xs sm:text-sm text-gray-600 hover:text-gray-900"
             >
               ← 뒤로
             </button>
@@ -307,31 +307,31 @@ const Profile = () => {
       </header>
 
       {/* 메인 콘텐츠 */}
-      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow">
+      <main className="max-w-4xl mx-auto py-6 container-responsive">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
           {/* 프로필 헤더 */}
-          <div className="px-6 py-8 border-b border-gray-200">
-            <div className="flex items-center space-x-4">
-              <div className="h-20 w-20 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="h-10 w-10 text-blue-600" />
+          <div className="px-4 sm:px-6 py-6 sm:py-8 border-b border-gray-200">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
               </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-responsive-xl sm:text-2xl font-bold text-gray-900 truncate">
                   {userData?.name || currentUser.displayName || '사용자'}
                 </h2>
-                <p className="text-gray-600">{currentUser.email}</p>
+                <p className="text-responsive-xs sm:text-sm text-gray-600 break-all">{currentUser.email}</p>
                 <div className="flex items-center mt-2">
                   {getUserTypeIcon(userData?.user_type)}
-                  <span className="ml-2 text-sm text-gray-600">
+                  <span className="ml-2 text-responsive-xs sm:text-sm text-gray-600">
                     {getUserTypeDisplay(userData?.user_type)}
                   </span>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap gap-2">
                 {!isEditing ? (
                   <button
                     onClick={handleEdit}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-responsive-xs sm:text-sm"
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     편집
@@ -341,14 +341,14 @@ const Profile = () => {
                     <button
                       onClick={handleSave}
                       disabled={loading}
-                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                      className="flex items-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 text-responsive-xs sm:text-sm"
                     >
                       <Save className="h-4 w-4 mr-2" />
                       저장
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                      className="flex items-center px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-responsive-xs sm:text-sm"
                     >
                       <X className="h-4 w-4 mr-2" />
                       취소
@@ -358,7 +358,7 @@ const Profile = () => {
                 <button
                   onClick={handleLogout}
                   disabled={loading}
-                  className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                  className="flex items-center px-3 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 text-responsive-xs sm:text-sm"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   로그아웃
@@ -368,13 +368,12 @@ const Profile = () => {
           </div>
 
           {/* 프로필 정보 */}
-          <div className="px-6 py-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">기본 정보</h3>
-            
+          <div className="px-4 sm:px-6 py-6">
+            <h3 className="text-responsive-lg sm:text-lg font-medium text-gray-900 mb-4">기본 정보</h3>
             <div className="space-y-4">
               {/* 이름 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
                   이름
                 </label>
                 {isEditing ? (
@@ -385,13 +384,13 @@ const Profile = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
-                  <p className="text-gray-900">{userData?.name || currentUser.displayName || '미설정'}</p>
+                  <p className="text-gray-900 break-words">{userData?.name || currentUser.displayName || '미설정'}</p>
                 )}
               </div>
 
               {/* 이메일 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
                   이메일
                 </label>
                 {isEditing ? (
@@ -402,22 +401,22 @@ const Profile = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 ) : (
-                  <p className="text-gray-900">{userData?.email || currentUser.email}</p>
+                  <p className="text-gray-900 break-all">{userData?.email || currentUser.email}</p>
                 )}
               </div>
 
               {/* 사용자 타입 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
                   사용자 타입
                 </label>
-                <div className="flex items-center">
+                <div className="flex items-center flex-wrap gap-2">
                   {getUserTypeIcon(userData?.user_type)}
-                  <span className="ml-2 text-gray-900">
+                  <span className="text-gray-900 text-responsive-xs sm:text-sm">
                     {getUserTypeDisplay(userData?.user_type)}
                   </span>
                   {isEditing && (
-                    <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       변경 불가
                     </span>
                   )}
@@ -432,33 +431,33 @@ const Profile = () => {
               {/* 고유번호 (업체 사용자만) */}
               {userData?.user_type === 'business' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
                     고유번호
                   </label>
                   {userData?.uniqueCode ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-1 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-md p-3">
-                        <code className="text-lg font-mono text-blue-800 font-bold">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex-1 min-w-[160px] bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-md p-3">
+                        <code className="text-responsive-lg sm:text-lg font-mono text-blue-800 font-bold break-all">
                           {userData.uniqueCode}
                         </code>
                       </div>
                       <button
                         onClick={() => copyToClipboard(userData.uniqueCode)}
-                        className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-responsive-xs sm:text-sm"
                       >
                         <Copy className="h-4 w-4 mr-1" />
                         복사
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-1 bg-gray-50 border-2 border-gray-200 rounded-md p-3">
-                        <p className="text-gray-500">고유번호가 생성되지 않았습니다.</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex-1 min-w-[160px] bg-gray-50 border-2 border-gray-200 rounded-md p-3">
+                        <p className="text-gray-500 text-responsive-xs sm:text-sm">고유번호가 생성되지 않았습니다.</p>
                       </div>
                       <button
                         onClick={generateUniqueCode}
                         disabled={loading}
-                        className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 text-responsive-xs sm:text-sm"
                       >
                         <Key className="h-4 w-4 mr-1" />
                         생성
@@ -474,22 +473,22 @@ const Profile = () => {
               {/* 업체 고유번호 입력 (노동자 사용자만, 권한이 없을 때만) */}
               {userData?.user_type === 'worker' && permissionStatus?.status !== 'active' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
                     업체 고유번호
                   </label>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <input
                       type="text"
                       value={businessCode}
                       onChange={(e) => setBusinessCode(e.target.value.toUpperCase())}
                       placeholder="업체 고유번호를 입력하세요"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 min-w-[160px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       maxLength={8}
                     />
                     <button
                       onClick={handleBusinessCodeSubmit}
                       disabled={loading || !businessCode.trim()}
-                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                      className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 text-responsive-xs sm:text-sm"
                     >
                       <Key className="h-4 w-4 mr-1" />
                       권한 요청
@@ -504,15 +503,15 @@ const Profile = () => {
               {/* 권한 상태 표시 (노동자 사용자만, 권한이 있을 때) */}
               {userData?.user_type === 'worker' && permissionStatus?.status === 'active' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
                     권한 상태
                   </label>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex items-center px-3 py-2 bg-green-100 rounded-md">
                       <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                      <span className="text-green-800 font-medium">활성</span>
+                      <span className="text-green-800 font-medium text-responsive-xs sm:text-sm">활성</span>
                     </div>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-responsive-xs sm:text-sm text-gray-600">
                       {permissionStatus.businessName} 업체에 권한이 부여되었습니다.
                     </span>
                   </div>
@@ -524,7 +523,7 @@ const Profile = () => {
 
               {/* 계정 생성일 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
                   계정 생성일
                 </label>
                 <p className="text-gray-900">
@@ -538,26 +537,25 @@ const Profile = () => {
           </div>
 
           {/* 계정 관리 */}
-          <div className="px-6 py-6 border-t border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">계정 관리</h3>
-            
+          <div className="px-4 sm:px-6 py-6 border-t border-gray-200">
+            <h3 className="text-responsive-lg sm:text-lg font-medium text-gray-900 mb-4">계정 관리</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-gray-900">비밀번호 변경</h4>
-                  <p className="text-sm text-gray-600">계정 보안을 위해 주기적으로 비밀번호를 변경하세요</p>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-2 flex-wrap">
+                <div className="min-w-0">
+                  <h4 className="font-medium text-gray-900 text-responsive-sm sm:text-base">비밀번호 변경</h4>
+                  <p className="text-responsive-xs sm:text-sm text-gray-600">계정 보안을 위해 주기적으로 비밀번호를 변경하세요</p>
                 </div>
-                <button className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium">
+                <button className="px-3 sm:px-4 py-2 text-blue-600 hover:text-blue-700 font-medium text-responsive-xs sm:text-sm">
                   변경하기
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h4 className="font-medium text-gray-900">계정 삭제</h4>
-                  <p className="text-sm text-gray-600">계정을 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.</p>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-2 flex-wrap">
+                <div className="min-w-0">
+                  <h4 className="font-medium text-gray-900 text-responsive-sm sm:text-base">계정 삭제</h4>
+                  <p className="text-responsive-xs sm:text-sm text-gray-600">계정을 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.</p>
                 </div>
-                <button className="px-4 py-2 text-red-600 hover:text-red-700 font-medium">
+                <button className="px-3 sm:px-4 py-2 text-red-600 hover:text-red-700 font-medium text-responsive-xs sm:text-sm">
                   삭제하기
                 </button>
               </div>

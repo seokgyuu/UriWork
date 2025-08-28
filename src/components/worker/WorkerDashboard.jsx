@@ -434,15 +434,15 @@ const WorkerDashboard = () => {
   const renderHeaderSafe = () => {
     try {
       return (
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <h1 className="text-3xl font-bold text-gray-900">피고용자 대시보드</h1>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">안녕하세요, {currentUser?.displayName || '직원님'}!</span>
+        <header className="bg-white shadow sticky-header safe-area-top">
+          <div className="max-w-7xl mx-auto container-responsive">
+            <div className="flex justify-between items-start sm:items-center py-3 sm:py-4 gap-3 touch-target">
+              <h1 className="text-responsive-2xl sm:text-3xl font-bold text-gray-900 truncate max-w-[60vw] sm:max-w-none">피고용자 대시보드</h1>
+              <div className="flex items-center flex-wrap gap-2 sm:gap-4 justify-end min-w-0">
+                <span className="hidden sm:inline text-responsive-xs sm:text-sm text-gray-600 max-w-[40vw] truncate">안녕하세요, {currentUser?.displayName || '직원님'}!</span>
                 <button
                   onClick={handleProfileClick}
-                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="flex items-center px-2 sm:px-3 py-2 text-responsive-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 whitespace-nowrap"
                 >
                   <User className="h-4 w-4 mr-2" />
                   프로필
@@ -450,7 +450,7 @@ const WorkerDashboard = () => {
                 <button
                   onClick={handleLogout}
                   disabled={loading}
-                  className="flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                  className="flex items-center px-2 sm:px-3 py-2 text-responsive-xs sm:text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 whitespace-nowrap"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   로그아웃
@@ -472,8 +472,8 @@ const WorkerDashboard = () => {
     try {
       return (
         <div className="bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <nav className="flex space-x-8">
+          <div className="max-w-7xl mx-auto container-responsive">
+            <nav className="flex space-x-4 sm:space-x-6 responsive-tabs">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 try { console.log('[WorkerDashboard] tab entry', { id: tab.id, hasIcon: typeof Icon === 'function' }); } catch (_) {}
@@ -481,13 +481,13 @@ const WorkerDashboard = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center px-3 py-4 text-sm font-medium border-b-2 ${
+                    className={`flex items-center px-2 sm:px-3 py-3 sm:py-4 text-responsive-sm sm:text-sm font-medium border-b-2 whitespace-nowrap shrink-0 ${
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
-                    <SafeIcon Icon={Icon} className="h-4 w-4 mr-2" />
+                    <SafeIcon Icon={Icon} className="h-4 w-4 mr-2 flex-shrink-0" />
                     <span>{tab.name}</span>
                   </button>
                 );
@@ -503,24 +503,24 @@ const WorkerDashboard = () => {
   };
 
   const renderOverview = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 grid-gap-responsive">
       {(() => { try { console.log('[WorkerDashboard] renderOverview'); } catch (_) {} return null; })()}
       <div 
-        className="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
+        className="bg-white card-padding-responsive rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
         onClick={() => setActiveTab('schedule')}
       >
         <div className="flex items-center">
           <SafeIcon Icon={Calendar} className="h-8 w-8 text-blue-500" />
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-600">내 스케줄</p>
-            <p className="text-2xl font-bold text-gray-900">확인</p>
-            <p className="text-xs text-blue-600 mt-1">내 스케줄 →</p>
+            <p className="text-responsive-sm font-medium text-gray-600">내 스케줄</p>
+            <p className="text-responsive-xl font-bold text-gray-900">확인</p>
+            <p className="text-responsive-xs text-blue-600 mt-1">내 스케줄 →</p>
           </div>
         </div>
       </div>
       
       <div 
-        className="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
+        className="bg-white card-padding-responsive rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
         onClick={() => {
           if (permissionStatus?.status === 'active' && permissionStatus?.businessId) {
             navigate(`/calendar/${permissionStatus.businessId}`);
@@ -534,9 +534,9 @@ const WorkerDashboard = () => {
         <div className="flex items-center">
           <SafeIcon Icon={Calendar} className="h-8 w-8 text-green-500" />
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-600">업체 캘린더</p>
-            <p className="text-2xl font-bold text-gray-900">보기</p>
-            <p className="text-xs text-green-600 mt-1">
+            <p className="text-responsive-sm font-medium text-gray-600">업체 캘린더</p>
+            <p className="text-responsive-xl font-bold text-gray-900">보기</p>
+            <p className="text-responsive-xs text-green-600 mt-1">
               {permissionStatus?.status === 'active' ? '쉬는날 선택하기 →' : '권한 필요'}
             </p>
           </div>
@@ -544,29 +544,29 @@ const WorkerDashboard = () => {
       </div>
       
       <div 
-        className="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
+        className="bg-white card-padding-responsive rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
         onClick={() => setActiveTab('preferences')}
       >
         <div className="flex items-center">
           <SafeIcon Icon={Clock} className="h-8 w-8 text-purple-500" />
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-600">선호도</p>
-            <p className="text-2xl font-bold text-gray-900">설정</p>
-            <p className="text-xs text-purple-600 mt-1">선호도 설정 →</p>
+            <p className="text-responsive-sm font-medium text-gray-600">선호도</p>
+            <p className="text-responsive-xl font-bold text-gray-900">설정</p>
+            <p className="text-responsive-xs text-purple-600 mt-1">선호도 설정 →</p>
           </div>
         </div>
       </div>
       
       <div 
-        className="bg-white p-6 rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
+        className="bg-white card-padding-responsive rounded-lg shadow cursor-pointer hover:shadow-lg transition-shadow duration-200"
         onClick={() => setActiveTab('profile')}
       >
         <div className="flex items-center">
           <SafeIcon Icon={Building2} className="h-8 w-8 text-orange-500" />
-          <div className="ml-4">
-            <p className="text-sm font-medium text-gray-600">소속 업체</p>
-            <p className="text-2xl font-bold text-gray-900">{permissionStatus?.businessName || '미설정'}</p>
-            <p className="text-xs text-orange-600 mt-1">
+          <div className="ml-4 min-w-0">
+            <p className="text-responsive-sm font-medium text-gray-600">소속 업체</p>
+            <p className="text-responsive-xl font-bold text-gray-900 truncate">{permissionStatus?.businessName || '미설정'}</p>
+            <p className="text-responsive-xs text-orange-600 mt-1 truncate">
               {assignedTasks.length > 0 ? `${assignedTasks.length}개 업무` : '프로필 확인 →'}
             </p>
           </div>
@@ -660,15 +660,15 @@ const WorkerDashboard = () => {
 
   const renderMySchedule = () => (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white card-padding-responsive rounded-lg shadow">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">내 스케줄</h3>
+          <h3 className="text-responsive-lg sm:text-lg font-medium text-gray-900">내 스케줄</h3>
           <div className="flex items-center space-x-2">
             {/* 뷰 선택 탭 */}
-            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg overflow-x-auto">
               <button
                 onClick={() => setScheduleView('list')}
-                className={`flex items-center px-3 py-1 rounded-md transition-colors text-sm ${
+                className={`flex items-center px-3 py-1 rounded-md transition-colors text-responsive-xs sm:text-sm ${
                   scheduleView === 'list'
                     ? 'bg-white text-blue-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -679,7 +679,7 @@ const WorkerDashboard = () => {
               </button>
               <button
                 onClick={() => setScheduleView('calendar')}
-                className={`flex items-center px-3 py-1 rounded-md transition-colors text-sm ${
+                className={`flex items-center px-3 py-1 rounded-md transition-colors text-responsive-xs sm:text-sm ${
                   scheduleView === 'calendar'
                     ? 'bg-white text-blue-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -692,7 +692,7 @@ const WorkerDashboard = () => {
             <button 
               onClick={fetchMySchedule}
               disabled={loadingSchedule}
-              className="flex items-center text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400"
+              className="flex items-center text-responsive-xs sm:text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loadingSchedule ? 'animate-spin' : ''}`} />
               {loadingSchedule ? '새로고침 중...' : '새로고침'}
@@ -709,12 +709,12 @@ const WorkerDashboard = () => {
           <div className="space-y-6">
             {/* AI 생성 스케줄 표시 */}
             {mySchedule.ai_schedule && (
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 card-padding-responsive rounded-lg border border-purple-200">
                 <h4 className="font-medium text-purple-900 mb-3 flex items-center">
                   <Briefcase className="w-4 h-4 mr-2" />
                   AI 생성 스케줄 배정 현황
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 grid-gap-responsive text-responsive-xs sm:text-sm mb-4">
                   <div>
                     <span className="text-purple-600">기간:</span>
                     <span className="ml-2 font-medium">
@@ -773,7 +773,7 @@ const WorkerDashboard = () => {
                    </div>
                 ) : (
                   /* 캘린더 보기 - 월간 캘린더 형태 */
-                  <div className="bg-white rounded-lg border border-purple-200 p-4">
+                  <div className="bg-white rounded-lg border border-purple-200 card-padding-responsive">
                     {/* 월 네비게이션 */}
                     <div className="flex items-center justify-between mb-4">
                       <button
@@ -805,7 +805,7 @@ const WorkerDashboard = () => {
                       </button>
                     </div>
                     
-                    <div className="grid grid-cols-7 gap-1 text-xs">
+                    <div className="grid grid-cols-7 gap-1 text-responsive-xs">
                       {/* 요일 헤더 */}
                       {['일', '월', '화', '수', '목', '금', '토'].map(day => (
                         <div key={day} className="text-center py-2 font-medium text-purple-700 bg-purple-50 rounded">
@@ -823,12 +823,12 @@ const WorkerDashboard = () => {
             
             {/* 개인 선호도 스케줄 표시 */}
             {mySchedule.preference_schedule && (
-              <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg border border-blue-200">
+              <div className="bg-gradient-to-r from-blue-50 to-green-50 card-padding-responsive rounded-lg border border-blue-200">
                 <h4 className="font-medium text-blue-900 mb-3 flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
                   내 선호도 스케줄
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 grid-gap-responsive text-responsive-xs sm:text-sm mb-4">
                   <div>
                     <span className="text-blue-600">총 근무일:</span>
                     <span className="ml-2 font-medium">
@@ -857,7 +857,7 @@ const WorkerDashboard = () => {
                 </div>
                 
                 {/* 요일별 선호도 표시 */}
-                <div className="grid grid-cols-7 gap-2 text-xs">
+                <div className="grid grid-cols-7 gap-2 text-responsive-xs">
                   {['월', '화', '수', '목', '금', '토', '일'].map(day => {
                     const dayPreferences = mySchedule.preference_schedule.daily_preferences?.[day];
                     const selectedDepartments = dayPreferences?.selected_departments || [];
@@ -887,7 +887,7 @@ const WorkerDashboard = () => {
 
             {/* 추가 정보 */}
             {mySchedule.preference_schedule?.additional_preferences && (
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 card-padding-responsive rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-3">추가 선호사항</h4>
                 <div className="text-sm text-gray-600 whitespace-pre-wrap break-words">
                   {typeof mySchedule.preference_schedule.additional_preferences === 'string'
