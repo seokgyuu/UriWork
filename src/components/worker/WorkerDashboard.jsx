@@ -47,8 +47,9 @@ const WorkerDashboard = () => {
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [mySchedule, setMySchedule] = useState(null);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
+  // 자동 이동 제거: 권한이 active여도 대시보드 우선 표시
 
-  // 권한 상태 확인
+  // 권한 상태 확인 (동일 상태면 불필요한 업데이트 방지)
   const checkPermission = async () => {
     if (!currentUser) return;
 
@@ -56,7 +57,7 @@ const WorkerDashboard = () => {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const { db } = await import('../../firebase');
 
-      // 현재 사용자의 권한 확인
+      // 현재 사용자의 권한 확인 (active 우선)
       const permissionQuery = query(
         collection(db, 'permissions'),
         where('worker_id', '==', currentUser.uid),
@@ -66,20 +67,33 @@ const WorkerDashboard = () => {
 
       if (!permissionSnapshot.empty) {
         const permission = permissionSnapshot.docs[0].data();
-        setPermissionStatus({
-          status: 'active',
-          businessId: permission.business_id,
-          businessName: permission.business_name
+        setPermissionStatus(prev => {
+          const next = {
+            status: 'active',
+            businessId: permission.business_id,
+            businessName: permission.business_name
+          };
+          // 변경 없으면 그대로 유지해 렌더 방지
+          if (
+            prev?.status === next.status &&
+            prev?.businessId === next.businessId &&
+            prev?.businessName === next.businessName
+          ) {
+            return prev;
+          }
+          return next;
         });
-        
-        // 로컬 스토리지에 권한 정보 저장
-        localStorage.setItem(`worker_permission_${currentUser.uid}`, JSON.stringify({
-          businessId: permission.business_id,
-          businessName: permission.business_name
-        }));
-        
-        // 권한이 활성화되면 할당된 업무도 불러오기
-        fetchAssignedTasks();
+
+        // 로컬 스토리지에 권한 정보 저장 (변경 여부와 무관, 경량)
+        try {
+          localStorage.setItem(
+            `worker_permission_${currentUser.uid}`,
+            JSON.stringify({
+              businessId: permission.business_id,
+              businessName: permission.business_name
+            })
+          );
+        } catch (_) {}
 
         return;
       }
@@ -91,15 +105,15 @@ const WorkerDashboard = () => {
         where('status', '==', 'pending')
       );
       const pendingPermissionSnapshot = await getDocs(pendingPermissionQuery);
-      
-      if (!pendingPermissionSnapshot.empty) {
-        setPermissionStatus({ status: 'pending' });
-      } else {
-        setPermissionStatus({ status: 'pending' }); // 기본값
-      }
+
+      setPermissionStatus(prev => {
+        // pending이든 없든 UI는 대기 표시, 동일 상태면 업데이트 생략
+        if (prev?.status === 'pending') return prev;
+        return { status: 'pending' };
+      });
     } catch (error) {
       console.error('권한 확인 에러:', error);
-      setPermissionStatus({ status: 'error' });
+      setPermissionStatus(prev => (prev?.status === 'error' ? prev : { status: 'error' }));
     }
   };
 
@@ -107,16 +121,20 @@ const WorkerDashboard = () => {
     checkPermission();
   }, [currentUser]);
 
-  // 권한이 pending 상태일 때 주기적으로 확인
+  // 권한이 pending 상태일 때 주기적으로 확인 (폴링 주기 완화)
   useEffect(() => {
     if (permissionStatus?.status === 'pending') {
       const interval = setInterval(() => {
         checkPermission();
-      }, 1000); // 1초마다 확인
+      }, 3000); // 3초마다 확인
 
       return () => clearInterval(interval);
     }
   }, [permissionStatus?.status]);
+
+  // 자동 캘린더 이동 로직 제거됨
+
+  // 자동 이동 화면 표시 제거
 
   // 권한이 활성화되면 스케줄도 주기적으로 새로고침
   useEffect(() => {
@@ -263,109 +281,85 @@ const WorkerDashboard = () => {
     }
   };
 
-  // 권한이 활성화되지 않은 경우(초기 null 포함) 권한 요청 화면
-  if (!permissionStatus || permissionStatus?.status === 'pending' || permissionStatus?.status === 'error') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        {/* 헤더 */}
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <h1 className="text-3xl font-bold text-gray-900">피고용자 대시보드</h1>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">안녕하세요, {currentUser?.displayName || '직원님'}!</span>
-                <button
-                  onClick={handleProfileClick}
-                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  프로필
-                </button>
-                <button
-                  onClick={handleLogout}
-                  disabled={loading}
-                  className="flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  로그아웃
-                </button>
-              </div>
+  // 권한 요청 화면 표시 여부 (훅 순서 고정: 최종 JSX에서 분기)
+  const showPermissionRequestScreen = !permissionStatus || permissionStatus?.status === 'pending' || permissionStatus?.status === 'error';
+
+  const renderPermissionRequestScreen = () => (
+    <div className="min-h-screen bg-gray-50">
+      {/* 헤더 */}
+      {renderHeaderSafe()}
+
+      {/* 권한 요청 화면 */}
+      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-lg shadow p-8">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+              <Key className="h-6 w-6 text-yellow-600" />
             </div>
+            <h2 className="mt-4 text-2xl font-bold text-gray-900">업체 접근 권한 필요</h2>
+            <p className="mt-2 text-gray-600">
+              업체의 캘린더와 스케줄을 확인하려면 관리자로부터 권한을 받아야 합니다.
+            </p>
           </div>
-        </header>
 
-        {/* 권한 요청 화면 */}
-        <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow p-8">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
-                <Key className="h-6 w-6 text-yellow-600" />
+          <div className="mt-8 max-w-md mx-auto">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  업체 고유번호
+                </label>
+                <input
+                  type="text"
+                  value={businessCode}
+                  onChange={(e) => setBusinessCode(e.target.value.toUpperCase())}
+                  placeholder="업체에서 받은 고유번호를 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={8}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  업체 관리자에게 고유번호를 요청하세요.
+                </p>
               </div>
-              <h2 className="mt-4 text-2xl font-bold text-gray-900">업체 접근 권한 필요</h2>
-              <p className="mt-2 text-gray-600">
-                업체의 캘린더와 스케줄을 확인하려면 관리자로부터 권한을 받아야 합니다.
-              </p>
+
+              <button
+                onClick={handlePermissionRequest}
+                disabled={loading || !businessCode.trim()}
+                className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <>
+                    <Key className="h-4 w-4 mr-2" />
+                    권한 요청
+                  </>
+                )}
+              </button>
             </div>
 
-            <div className="mt-8 max-w-md mx-auto">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    업체 고유번호
-                  </label>
-                  <input
-                    type="text"
-                    value={businessCode}
-                    onChange={(e) => setBusinessCode(e.target.value.toUpperCase())}
-                    placeholder="업체에서 받은 고유번호를 입력하세요"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    maxLength={8}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    업체 관리자에게 고유번호를 요청하세요.
-                  </p>
-                </div>
-
-                <button
-                  onClick={handlePermissionRequest}
-                  disabled={loading || !businessCode.trim()}
-                  className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <>
-                      <Key className="h-4 w-4 mr-2" />
-                      권한 요청
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {permissionStatus?.status === 'pending' && (
-                <div className="mt-6 p-4 bg-blue-50 rounded-md">
-                  <div className="flex items-center">
-                    <AlertCircle className="h-5 w-5 text-blue-600 mr-2" />
-                    <div>
-                      <p className="text-sm text-blue-800 font-medium">
-                        {permissionStatus.businessName 
-                          ? `${permissionStatus.businessName} 업체의 권한 승인을 기다리고 있습니다.`
-                          : '권한 요청이 전송되었습니다. 관리자의 승인을 기다려주세요.'
-                        }
-                      </p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        승인 완료 시 자동으로 스케줄을 확인할 수 있습니다.
-                      </p>
-                    </div>
+            {permissionStatus?.status === 'pending' && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-md">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mr-2" />
+                  <div>
+                    <p className="text-sm text-blue-800 font-medium">
+                      {permissionStatus.businessName 
+                        ? `${permissionStatus.businessName} 업체의 권한 승인을 기다리고 있습니다.`
+                        : '권한 요청이 전송되었습니다. 관리자의 승인을 기다려주세요.'
+                      }
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      승인 완료 시 자동으로 스케줄을 확인할 수 있습니다.
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        </main>
-      </div>
-    );
-  }
+        </div>
+      </main>
+    </div>
+  );
 
   // 권한이 있는 경우 기존 대시보드
   const handleSchedulePreferencesSave = async () => {
@@ -1046,11 +1040,17 @@ const WorkerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {renderHeaderSafe()}
-      {renderTabsSafe()}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {safeMainContent}
-      </main>
+      {showPermissionRequestScreen ? (
+        renderPermissionRequestScreen()
+      ) : (
+        <>
+          {renderHeaderSafe()}
+          {renderTabsSafe()}
+          <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            {safeMainContent}
+          </main>
+        </>
+      )}
     </div>
   );
 };
