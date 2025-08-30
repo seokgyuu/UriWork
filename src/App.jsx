@@ -28,7 +28,7 @@ function App() {
     <AuthProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ErrorBoundary>
-        <div className="App">
+        <div className="App safe-area-top safe-area-bottom container-responsive">
           <Routes>
             {/* 공개 라우트 */}
             <Route path="/login" element={<Login />} />

@@ -15,12 +15,17 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  background-color: #f9fafb;
 }
 
 img, video, canvas, svg {
   max-width: 100%;
   height: auto;
 }
+
+/* 박스 사이징 통일로 레이아웃 깨짐 방지 */
+*, *::before, *::after { box-sizing: border-box; }
 
 /* 컨테이너 패딩을 화면에 맞춰 유동적으로 */
 .container-responsive {
@@ -59,6 +64,9 @@ img, video, canvas, svg {
 .safe-area-top {
   padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
 }
+.safe-area-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+}
 .sticky-header {
   position: sticky;
   top: 0;
@@ -67,3 +75,6 @@ img, video, canvas, svg {
 .touch-target {
   min-height: 44px;
 }
+
+/* 모바일에서 좌우 잘림 방지 */
+html, body, #root { width: 100%; overflow-x: hidden; }

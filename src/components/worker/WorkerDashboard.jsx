@@ -867,13 +867,29 @@ const WorkerDashboard = () => {
                         <div className="font-medium text-blue-700 mb-1">{day}</div>
                         <div className="bg-white rounded p-2 min-h-[60px] border border-blue-200">
                           {selectedDepartments.length > 0 ? (
-                            <div className="space-y-1">
-                              {selectedDepartments.map((deptId, index) => (
-                                <div key={index} className="text-xs bg-blue-100 p-1 rounded">
-                                  {deptId}
+                            (() => {
+                              const maxVisible = 6;
+                              const visible = selectedDepartments.slice(0, maxVisible);
+                              const extraCount = selectedDepartments.length - visible.length;
+                              return (
+                                <div className="flex flex-wrap gap-1 justify-center">
+                                  {visible.map((deptId, index) => (
+                                    <span
+                                      key={index}
+                                      className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-[10px] sm:text-xs max-w-[72px] sm:max-w-[110px] truncate"
+                                      title={String(deptId)}
+                                    >
+                                      {deptId}
+                                    </span>
+                                  ))}
+                                  {extraCount > 0 && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] sm:text-xs">
+                                      +{extraCount}
+                                    </span>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
+                              );
+                            })()
                           ) : (
                             <div className="text-blue-400 text-xs italic">선택 없음</div>
                           )}
