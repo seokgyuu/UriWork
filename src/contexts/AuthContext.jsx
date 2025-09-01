@@ -277,41 +277,23 @@ export const AuthProvider = ({ children }) => {
       }
       
       if (platform === 'ios' || platform === 'android') {
-        // 플랫폼 확인
-        const deviceInfo = await Device.getInfo();
-        console.log('⚡️  [log] - AuthContext: 디바이스 정보:', deviceInfo);
-        
-        if (deviceInfo.isVirtual) {
-          console.log('⚡️  [log] - AuthContext: 시뮬레이터 감지 → Google 웹 리다이렉트 폴백 사용');
-          // 시뮬레이터에서는 웹 리다이렉트 사용
-          const provider = new GoogleAuthProvider();
-          provider.addScope('email');
-          provider.addScope('profile');
-          
-          await signInWithRedirect(auth, provider);
-          return;
-        }
+        // 모바일(iOS/Android)은 항상 리다이렉트 사용
+        const provider = new GoogleAuthProvider();
+        provider.addScope('email');
+        provider.addScope('profile');
+        try { sessionStorage.setItem('PENDING_GOOGLE_REDIRECT', '1'); } catch (_) {}
+        console.log('⚡️  [log] - AuthContext: 모바일 플랫폼 → Google 리다이렉트 사용');
+        await signInWithRedirect(auth, provider);
+        return;
       }
       
-      // 네이티브 플랫폼 또는 실제 디바이스
-      console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 → Google 팝업 사용');
-      
+      // 웹은 팝업 우선, 차단 시 리다이렉트로 폴백
       const provider = new GoogleAuthProvider();
       provider.addScope('email');
       provider.addScope('profile');
-      
       const result = await signInWithPopup(auth, provider);
       console.log('⚡️  [log] - AuthContext: Google 팝업 로그인 성공:', result.user);
-      
-      // 사용자 정보를 Firestore에 저장
-      try {
-        console.log('⚡️  [log] - AuthContext: Google 로그인 Firestore 저장 시작...');
-        await saveUserToFirestore(result.user, 'google', db);
-        console.log('⚡️  [log] - AuthContext: Google 로그인 Firestore 저장 완료!');
-      } catch (firestoreError) {
-        console.error('⚡️  [error] - AuthContext: Google 로그인 Firestore 저장 실패:', firestoreError);
-        // Firestore 저장 실패해도 로그인은 성공으로 처리
-      }
+      try { await saveUserToFirestore(result.user, 'google', db); } catch (e) { console.error('Firestore 저장 실패', e); }
       return result.user;
       
     } catch (error) {
@@ -733,23 +715,20 @@ export const AuthProvider = ({ children }) => {
     initializeFirebase();
   }, []);
 
-  // 리다이렉트 결과 처리: iOS는 네이티브만 사용하므로 웹 리다이렉트 결과 처리 건너뜀
+  // 리다이렉트 결과 처리: 모바일(iOS/Android) 포함 항상 시도
   useEffect(() => {
     const handleRedirectResult = async () => {
       try {
         console.log('⚡️  [log] - AuthContext: 리다이렉트 결과 처리 시작...');
-        const isIOS = typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'ios';
-        if (isIOS) {
-          console.log('⚡️  [log] - AuthContext: iOS는 네이티브만 사용 - getRedirectResult 생략');
-          return;
-        }
         const result = await getRedirectResult(auth);
         if (result) {
           console.log('⚡️  [log] - AuthContext: 리다이렉트 결과 감지:', result.user);
-          await saveUserToFirestore(result.user);
+          await saveUserToFirestore(result.user, 'google', db);
         }
       } catch (error) {
         console.error('⚡️  [error] - AuthContext: 리다이렉트 결과 처리 실패:', error);
+      } finally {
+        try { sessionStorage.removeItem('PENDING_GOOGLE_REDIRECT'); } catch (_) {}
       }
     };
 
