@@ -35,7 +35,7 @@ jobs:
           CFG
 
       - name: Build with Jekyll
-        uses: actions/jekyll-build@v1
+        uses: actions/jekyll-build-pages@v1
         with:
           source: ./site_src
           destination: ./_site
