@@ -29,6 +29,9 @@ jobs:
           mkdir -p site_src
           cp README.md site_src/index.md
           printf "---\nlayout: default\ntitle: UriWork\n---\n" | cat - site_src/index.md > site_src/index2.md && mv site_src/index2.md site_src/index.md
+          # copy docs before build (avoid writing to _site after build)
+          mkdir -p site_src/docs
+          if [ -d docs ]; then cp -r docs/* site_src/docs/ || true; fi
           cat > site_src/_config.yml << 'CFG'
           title: UriWork
           theme: jekyll-theme-cayman
@@ -43,10 +46,7 @@ jobs:
           source: ./site_src
           destination: ./_site
 
-      - name: Copy docs (support/privacy/terms) into site
-        run: |
-          mkdir -p _site/docs
-          if [ -d docs ]; then cp -r docs/* _site/docs/ || true; fi
+      # docs already copied into source; no post-build writes to _site (avoids permission issues)
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
