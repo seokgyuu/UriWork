@@ -25,7 +25,13 @@ jobs:
         run: |
           cp README.md index.md
           printf "---\nlayout: default\ntitle: UriWork\n---\n" | cat - index.md > index2.md && mv index2.md index.md
-          echo "theme: jekyll-theme-cayman" > _config.yml
+          cat > _config.yml << 'CFG'
+          title: UriWork
+          theme: jekyll-theme-cayman
+          url: https://seokgyuu.github.io
+          baseurl: /UriWork
+          markdown: kramdown
+          CFG
 
       - name: Build with Jekyll
         uses: actions/jekyll-build@v1
