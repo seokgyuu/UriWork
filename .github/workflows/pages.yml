@@ -23,9 +23,10 @@ jobs:
 
       - name: Prepare Jekyll source (make README the homepage)
         run: |
-          cp README.md index.md
-          printf "---\nlayout: default\ntitle: UriWork\n---\n" | cat - index.md > index2.md && mv index2.md index.md
-          cat > _config.yml << 'CFG'
+          mkdir -p site_src
+          cp README.md site_src/index.md
+          printf "---\nlayout: default\ntitle: UriWork\n---\n" | cat - site_src/index.md > site_src/index2.md && mv site_src/index2.md site_src/index.md
+          cat > site_src/_config.yml << 'CFG'
           title: UriWork
           theme: jekyll-theme-cayman
           url: https://seokgyuu.github.io
@@ -36,7 +37,7 @@ jobs:
       - name: Build with Jekyll
         uses: actions/jekyll-build@v1
         with:
-          source: ./
+          source: ./site_src
           destination: ./_site
 
       - name: Copy docs (support/privacy/terms) into site
