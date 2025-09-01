@@ -21,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Prepare Jekyll source (make README the homepage)
         run: |
           mkdir -p site_src
@@ -44,9 +47,6 @@ jobs:
         run: |
           mkdir -p _site/docs
           if [ -d docs ]; then cp -r docs/* _site/docs/ || true; fi
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
