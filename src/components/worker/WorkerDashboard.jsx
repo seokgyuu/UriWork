@@ -437,7 +437,9 @@ const WorkerDashboard = () => {
         <header className="bg-white shadow sticky-header safe-area-top">
           <div className="max-w-7xl mx-auto container-responsive">
             <div className="flex justify-between items-start sm:items-center py-3 sm:py-4 gap-3 touch-target">
-              <h1 className="text-responsive-2xl sm:text-3xl font-bold text-gray-900 truncate max-w-[60vw] sm:max-w-none">피고용자 대시보드</h1>
+              <h1 className="text-responsive-2xl sm:text-3xl font-bold text-gray-900 truncate max-w-[60vw] sm:max-w-none">
+                {permissionStatus?.businessName || '피고용자'}
+              </h1>
               <div className="flex items-center flex-wrap gap-2 sm:gap-4 justify-end min-w-0">
                 <span className="hidden sm:inline text-responsive-xs sm:text-sm text-gray-600 max-w-[40vw] truncate">안녕하세요, {currentUser?.displayName || '직원님'}!</span>
                 <button

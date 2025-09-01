@@ -59,6 +59,7 @@ const BusinessDashboard = () => {
   const [workFields, setWorkFields] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [loading, setLoading] = useState(false);
+  const [businessName, setBusinessName] = useState('');
 
   const tabs = [
     { id: 'overview', name: '개요', icon: 'Calendar' },
@@ -134,6 +135,35 @@ const BusinessDashboard = () => {
     } else {
       fetchDepartments();
       fetchWorkTasks();
+      // 업체 이름 로드
+      (async () => {
+        try {
+          // 로컬 저장소 우선 시도
+          let nameFromStorage = '';
+          try {
+            nameFromStorage = localStorage.getItem(`business_name_${currentUser.uid}`) || '';
+          } catch (_) {}
+
+          if (nameFromStorage) {
+            setBusinessName(nameFromStorage);
+            return;
+          }
+
+          const { doc, getDoc } = await import('firebase/firestore');
+          const { db } = await import('../../firebase');
+          const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            setBusinessName(
+              data?.name || data?.business_name || currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '업체')
+            );
+          } else {
+            setBusinessName(currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '업체'));
+          }
+        } catch (e) {
+          setBusinessName(currentUser?.displayName || (currentUser?.email ? currentUser.email.split('@')[0] : '업체'));
+        }
+      })();
     }
   }, [currentUser, navigate]);
 
@@ -266,7 +296,7 @@ const BusinessDashboard = () => {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <h1 className="text-3xl font-bold text-gray-900">업체 대시보드</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{businessName || '업체'}</h1>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">안녕하세요, {currentUser?.displayName || '사장님'}!</span>
               <button
