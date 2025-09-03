@@ -675,6 +675,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 사용자 정보 업데이트
+  const updateUserData = async (uid, updateData) => {
+    try {
+      console.log('⚡️  [log] - AuthContext: 사용자 정보 업데이트 시작:', { uid, updateData });
+      
+      if (!uid) {
+        throw new Error('사용자 ID가 없습니다.');
+      }
+      
+      const userRef = doc(db, 'users', uid);
+      const dataToUpdate = {
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      };
+      
+      await updateDoc(userRef, dataToUpdate);
+      console.log('⚡️  [log] - AuthContext: 사용자 정보 업데이트 완료');
+      
+      return true;
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: 사용자 정보 업데이트 실패:', error);
+      throw error;
+    }
+  };
+
   // 인증 상태 초기화
   useEffect(() => {
     const initializeFirebase = async () => {
@@ -766,7 +791,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUserType,
     updateUserPreferences,
-    getUserData
+    getUserData,
+    updateUserData
   };
 
   return (

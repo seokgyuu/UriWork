@@ -185,8 +185,30 @@ const Profile = () => {
       
       toast.success('프로필이 업데이트되었습니다.');
     } catch (error) {
-      console.error('프로필 업데이트 에러:', error);
-      // 에러 메시지는 updateUserData에서 이미 처리됨
+      console.error('⚡️  [error] - Profile: 프로필 업데이트 에러:', error);
+      
+      let errorMessage = '프로필 업데이트에 실패했습니다.';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.code) {
+        switch (error.code) {
+          case 'permission-denied':
+            errorMessage = '권한이 없습니다. 다시 로그인해주세요.';
+            break;
+          case 'not-found':
+            errorMessage = '사용자 정보를 찾을 수 없습니다.';
+            break;
+          case 'network-request-failed':
+            errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
+            break;
+          default:
+            errorMessage = `업데이트 실패: ${error.code}`;
+        }
+      }
+      
+      toast.error(errorMessage);
+      
     } finally {
       setLoading(false);
     }
@@ -290,12 +312,12 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dashboard-container">
       {/* 헤더 */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto container-responsive">
-          <div className="flex justify-between items-center py-4 sm:py-6">
-            <h1 className="text-responsive-2xl sm:text-3xl font-bold text-gray-900">프로필</h1>
+      <header className="bg-white shadow header-mobile">
+        <div className="w-full px-2 sm:px-4">
+          <div className="flex justify-between items-center py-3 sm:py-6">
+            <h1 className="text-lg sm:text-3xl font-bold text-gray-900 text-responsive-xl">프로필</h1>
             <button
               onClick={() => navigate(-1)}
               className="text-responsive-xs sm:text-sm text-gray-600 hover:text-gray-900"

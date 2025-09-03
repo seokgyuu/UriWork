@@ -285,13 +285,13 @@ const WorkerDashboard = () => {
   const showPermissionRequestScreen = !permissionStatus || permissionStatus?.status === 'pending' || permissionStatus?.status === 'error';
 
   const renderPermissionRequestScreen = () => (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dashboard-container">
       {/* 헤더 */}
       {renderHeaderSafe()}
 
       {/* 권한 요청 화면 */}
-      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow p-8">
+      <main className="max-w-4xl mx-auto py-3 sm:py-6 px-2 sm:px-6 lg:px-8 container-responsive">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-8 card-padding-responsive">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
               <Key className="h-6 w-6 text-yellow-600" />
@@ -1057,15 +1057,17 @@ const WorkerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dashboard-container">
       {showPermissionRequestScreen ? (
         renderPermissionRequestScreen()
       ) : (
         <>
           {renderHeaderSafe()}
           {renderTabsSafe()}
-          <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            {safeMainContent}
+          <main className="w-full py-3 sm:py-6 px-2 sm:px-4">
+            <div className="w-full">
+              {safeMainContent}
+            </div>
           </main>
         </>
       )}

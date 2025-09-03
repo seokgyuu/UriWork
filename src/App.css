@@ -78,3 +78,156 @@ img, video, canvas, svg {
 
 /* 모바일에서 좌우 잘림 방지 */
 html, body, #root { width: 100%; overflow-x: hidden; }
+
+/* iPhone 13 mini 전용 최적화 (375px × 812px) */
+@media only screen and (max-width: 375px) and (max-height: 812px) {
+  /* 기본 폰트 크기 조정 */
+  html {
+    font-size: 14px;
+  }
+  
+  /* 컨테이너 패딩 최소화 */
+  .container-responsive {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  /* 버튼 크기 최적화 */
+  .btn-sm-mobile {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 40px;
+  }
+  
+  .btn-mobile {
+    padding: 10px 16px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+  
+  /* 카드 패딩 축소 */
+  .card-padding-responsive {
+    padding: 12px;
+  }
+  
+  /* 텍스트 크기 최적화 */
+  .text-responsive-2xl { font-size: 1.25rem; }
+  .text-responsive-xl { font-size: 1.125rem; }
+  .text-responsive-lg { font-size: 1rem; }
+  .text-responsive-base { font-size: 0.875rem; }
+  .text-responsive-sm { font-size: 0.75rem; }
+  .text-responsive-xs { font-size: 0.675rem; }
+  
+  /* 간격 최적화 */
+  .space-y-6 > * + * { margin-top: 1rem; }
+  .space-y-4 > * + * { margin-top: 0.75rem; }
+  .space-y-3 > * + * { margin-top: 0.5rem; }
+  
+  /* 그리드 갭 축소 */
+  .grid-gap-responsive {
+    gap: 8px;
+  }
+  
+  /* 로그인 화면 최적화 */
+  .login-container {
+    padding: 16px 8px;
+    max-width: 100%;
+  }
+  
+  .login-form {
+    space-y: 4;
+  }
+  
+  /* 대시보드 최적화 */
+  .dashboard-container {
+    padding: 8px;
+  }
+  
+  /* 탭 버튼 크기 조정 */
+  .tab-button-mobile {
+    padding: 8px 12px;
+    font-size: 12px;
+    min-width: 60px;
+  }
+  
+  /* 입력 필드 최적화 */
+  .input-mobile {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-height: 40px;
+  }
+  
+  /* 모달 최적화 */
+  .modal-mobile {
+    margin: 8px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+}
+
+/* 작은 화면 공통 최적화 (iPhone SE, iPhone 13 mini 등) */
+@media only screen and (max-width: 390px) {
+  /* 헤더 높이 축소 */
+  .header-mobile {
+    min-height: 56px;
+    padding: 8px 12px;
+  }
+  
+  /* 네비게이션 버튼 크기 조정 */
+  .nav-button-mobile {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  /* 테이블 최적화 */
+  .table-mobile {
+    font-size: 12px;
+  }
+  
+  .table-mobile td,
+  .table-mobile th {
+    padding: 6px 8px;
+  }
+  
+  /* 폼 요소 간격 축소 */
+  .form-group-mobile {
+    margin-bottom: 12px;
+  }
+  
+  /* 알림 메시지 최적화 */
+  .alert-mobile {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+/* 전체 너비 유틸리티 클래스 */
+.full-width-content {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.full-width-grid {
+  width: 100%;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* 컨테이너 최대 너비 제거 */
+@media (max-width: 768px) {
+  .max-w-7xl,
+  .max-w-6xl,
+  .max-w-5xl,
+  .max-w-4xl,
+  .max-w-3xl,
+  .max-w-2xl,
+  .max-w-xl,
+  .max-w-lg,
+  .max-w-md,
+  .max-w-sm {
+    max-width: none !important;
+    width: 100% !important;
+  }
+}

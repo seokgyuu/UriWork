@@ -293,13 +293,13 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-4 px-4 sm:py-12 sm:px-6 lg:px-8 login-container">
+      <div className="max-w-md w-full space-y-4 sm:space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-2 sm:mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900 text-responsive-2xl">
             로그인
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-xs sm:text-sm text-gray-600 text-responsive-sm">
             계정이 없으신가요?{' '}
             <Link
               to="/register"
@@ -310,11 +310,11 @@ const Login = () => {
           </p>
         </div>
         
-        <div className="mt-8 space-y-6">
-          <div className="space-y-6">
+        <div className="mt-4 sm:mt-8 space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Google / Apple 로그인 버튼 */}
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 text-responsive-sm">
                 소셜 계정으로 간편하게 로그인하세요
               </p>
               
@@ -322,10 +322,10 @@ const Login = () => {
                 {/* 네이티브 환경에서는 Apple 로그인만 제공 */}
                 {isNative ? (
                   <div className="text-center">
-                    <p className="text-sm text-gray-500 mb-3">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3 text-responsive-sm">
                       📱 네이티브 앱에서는 Apple 로그인을 사용해주세요
                     </p>
-                    <p className="text-xs text-gray-400 mb-4">
+                    <p className="text-xs text-gray-400 mb-3 sm:mb-4 text-responsive-xs">
                       Google 로그인이 필요하시면 웹 버전을 이용해주세요
                     </p>
                   </div>
@@ -404,12 +404,12 @@ const Login = () => {
               </div>
 
               {/* Apple 로그인 버튼 */}
-              <div className="w-full mt-3">
+              <div className="w-full mt-2 sm:mt-3">
                 <button
                   type="button"
                   onClick={handleAppleLogin}
                   disabled={appleLoading || currentUser}
-                  className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                  className="w-full flex justify-center items-center px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 btn-mobile touch-target text-responsive-sm"
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M16.365 1.43c0 1.14-.42 2.085-1.26 2.835-.915.825-1.935 1.29-3.06 1.2-.06-1.11.45-2.085 1.29-2.895.885-.87 2.025-1.41 3.03-1.14zM21.165 17.255c-.57 1.365-1.26 2.58-2.055 3.63-1.08 1.425-2.13 2.865-3.855 2.895-1.65.03-2.175-.945-4.05-.945-1.875 0-2.445.915-4.05.975-1.68.06-2.88-1.53-3.96-2.94-2.145-2.79-3.78-7.905-1.575-11.37 1.095-1.77 3.045-2.895 5.145-2.925 1.62-.03 3.15 1.035 4.05 1.035.9 0 2.775-1.275 4.68-1.095.795.03 3.045.315 4.485 2.37-3.78 2.07-3.165 7.485.285 8.565z" />

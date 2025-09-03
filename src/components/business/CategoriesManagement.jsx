@@ -340,21 +340,21 @@ const CategoriesManagement = ({ currentUser }) => {
               type="text"
               value={newDepartment.department_name}
               onChange={(e) => setNewDepartment({ ...newDepartment, department_name: e.target.value })}
-              placeholder="파트명 입력 (예: 오전, 미들, 마감, 야간)"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="파트명"
+              className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm input-mobile"
             />
             <input
               type="number"
               min="1"
               value={newDepartment.required_staff_count}
               onChange={(e) => setNewDepartment({ ...newDepartment, required_staff_count: parseInt(e.target.value) || 1 })}
-              placeholder="필요 인원"
-              className="w-24 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="인원"
+              className="w-16 sm:w-24 px-2 sm:px-3 py-2 border border-gray-300 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 input-mobile"
             />
             <button
               onClick={handleAddDepartment}
               disabled={loading || !newDepartment.department_name.trim()}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed btn-mobile touch-target"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -369,10 +369,10 @@ const CategoriesManagement = ({ currentUser }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               요일별 근무 설정
             </label>
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {daysOfWeek.map(day => (
                 <div key={day} className="text-center">
-                  <div className="text-sm font-medium text-gray-600 mb-1">{day}</div>
+                  <div className="text-xs sm:text-sm font-medium text-gray-600 mb-1 text-responsive-xs">{day}</div>
                   <label className="flex items-center justify-center mb-2">
                     <input
                       type="checkbox"
@@ -433,7 +433,7 @@ const CategoriesManagement = ({ currentUser }) => {
         {/* 요일별 요약 뷰 */}
         <div className="mb-6">
           <h4 className="text-md font-medium text-gray-800 mb-3">요일별 파트 현황</h4>
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {daysOfWeek.map(day => {
               const dayDepartments = getDepartmentsForDay(day);
               const totalStaff = getTotalStaffForDay(day);
@@ -443,7 +443,7 @@ const CategoriesManagement = ({ currentUser }) => {
                 <button
                   key={day}
                   onClick={() => setSelectedDay(isSelected ? null : day)}
-                  className={`p-3 rounded-lg border-2 transition-all ${
+                  className={`p-2 sm:p-3 rounded-lg border-2 transition-all touch-target ${
                     isSelected 
                       ? 'border-blue-500 bg-blue-50' 
                       : dayDepartments.length > 0 
@@ -451,15 +451,15 @@ const CategoriesManagement = ({ currentUser }) => {
                         : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                   }`}
                 >
-                  <div className="text-sm font-medium text-gray-700 mb-1">{day}</div>
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs sm:text-sm font-medium text-gray-700 mb-1 text-responsive-xs">{day}</div>
+                  <div className="text-xs text-gray-600 text-responsive-xs">
                     {dayDepartments.length > 0 ? (
                       <>
-                        <div className="font-medium text-green-700">{dayDepartments.length}개 파트</div>
-                        <div className="text-green-600">총 {totalStaff}명 필요</div>
+                        <div className="font-medium text-green-700">{dayDepartments.length}개</div>
+                        <div className="text-green-600">{totalStaff}명</div>
                       </>
                     ) : (
-                      <div className="text-gray-500">근무 없음</div>
+                      <div className="text-gray-500">없음</div>
                     )}
                   </div>
                 </button>
@@ -470,7 +470,7 @@ const CategoriesManagement = ({ currentUser }) => {
         
         {/* 선택된 요일의 상세 정보 */}
         {selectedDay && (
-          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden max-w-md mx-auto">
+          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden w-full">
             {/* 헤더 */}
             <div className="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2">
               <div className="flex items-center justify-between">
@@ -503,28 +503,54 @@ const CategoriesManagement = ({ currentUser }) => {
                       }
                       
                       return (
-                        <div key={index} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-md p-3 hover:shadow-sm transition-shadow">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <div>
-                                <span className="font-medium text-gray-800 text-sm">{dept.department_name}</span>
+                        <div key={index} className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-md p-4 hover:shadow-sm transition-shadow">
+                          {/* 모바일: 세로 레이아웃 */}
+                          <div className="block sm:hidden">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                              <span className="font-medium text-gray-800 text-sm">{dept.department_name}</span>
+                            </div>
+                            {timeInfo && (
+                              <div className="text-xs text-gray-500 mb-3">{timeInfo}</div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <div className="text-left">
+                                <div className="text-lg font-bold text-green-600">{dept.required_staff_count}명</div>
+                                <div className="text-xs text-gray-500">필요</div>
+                              </div>
+                              <button
+                                onClick={() => handleEditDepartment(dept)}
+                                className="px-4 py-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target border border-gray-200 hover:border-blue-300"
+                                title="수정"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* 데스크톱: 가로 레이아웃 */}
+                          <div className="hidden sm:flex sm:items-center sm:justify-between">
+                            <div className="flex items-center space-x-3 flex-1 min-w-0">
+                              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium text-gray-800 text-sm block truncate">{dept.department_name}</span>
                                 {timeInfo && (
                                   <div className="text-xs text-gray-500 mt-1">{timeInfo}</div>
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            
+                            <div className="flex items-center space-x-4 flex-shrink-0">
                               <div className="text-right">
-                                <div className="text-lg font-bold text-green-600">{dept.required_staff_count}</div>
-                                <div className="text-xs text-gray-500">명 필요</div>
+                                <div className="text-lg font-bold text-green-600">{dept.required_staff_count}명</div>
+                                <div className="text-xs text-gray-500">필요</div>
                               </div>
                               <button
                                 onClick={() => handleEditDepartment(dept)}
-                                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                className="px-4 py-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target border border-gray-200 hover:border-blue-300"
                                 title="수정"
                               >
-                                <Edit className="h-3 w-3" />
+                                <Edit className="h-4 w-4" />
                               </button>
                             </div>
                           </div>
@@ -597,16 +623,16 @@ const CategoriesManagement = ({ currentUser }) => {
         
         {/* 등록된 주요업무 목록 */}
         {workFields.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {workFields.map((task, index) => (
-              <div key={index} className="bg-gray-100 px-3 py-2 rounded-md text-sm flex items-center justify-between">
-                <span>{task.task_name}</span>
+              <div key={index} className="bg-gray-100 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm flex items-center justify-between text-responsive-sm">
+                <span className="flex-1 min-w-0 truncate pr-2">{task.task_name}</span>
                 <button
                   onClick={() => handleRemoveWorkTask(index)}
-                  className="text-red-600 hover:text-red-800 hover:bg-red-100 p-1 rounded"
+                  className="text-red-600 hover:text-red-800 hover:bg-red-100 p-1 rounded flex-shrink-0 touch-target"
                   title="삭제"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
               </div>
             ))}

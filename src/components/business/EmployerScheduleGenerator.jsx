@@ -14,7 +14,9 @@ import {
   BarChart3,
   Briefcase,
   Sparkles,
-  X
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import CalendarView from './CalendarView';
 
@@ -32,6 +34,7 @@ const EmployerScheduleGenerator = () => {
   const [confirmedAbsences, setConfirmedAbsences] = useState([]); // 확정된 결근 목록
   const [scheduleView, setScheduleView] = useState('list'); // 스케줄 뷰 모드 (list/calendar)
   const [departmentStaffing, setDepartmentStaffing] = useState([]); // 파트별 필요 인원 및 근무 시간
+  const [showAdvancedConstraints, setShowAdvancedConstraints] = useState(false); // 고급 제약사항 표시 여부
 
   // 요일 배열
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
@@ -1734,94 +1737,127 @@ const EmployerScheduleGenerator = () => {
 
             {/* 고급 제약사항 설정 */}
             <div className="bg-white p-6 rounded-lg shadow mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                <Settings className="w-5 h-5 mr-2 text-blue-600" />
-                고급 제약사항 설정
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <button 
+                onClick={() => setShowAdvancedConstraints(!showAdvancedConstraints)}
+                className="w-full flex items-center justify-between text-left hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors"
+              >
+                <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                  <Settings className="w-5 h-5 mr-2 text-blue-600" />
+                  고급 제약사항 설정
+                </h3>
+                {showAdvancedConstraints ? (
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                )}
+              </button>
+              
+              <p className="text-sm text-gray-600 mt-4 mb-4">
                 AI 스케줄 생성 시 모든 제약사항이 자동으로 적용됩니다. 노동법과 직원 복지를 고려한 안전하고 공정한 스케줄이 생성됩니다.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 휴식시간 보장 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    휴식시간 보장 (11시간 연속) ✅
-                  </label>
-                </div>
-                
-                {/* 연속근무일 제한 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    연속근무일 제한 (최대 6일) ✅
-                  </label>
-                </div>
-                
-                {/* 주간 휴식 보장 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    주간 휴식 보장 (최소 1일) ✅
-                  </label>
-                </div>
-                
-                {/* 일일 근무시간 제한 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    일일 근무시간 제한 (최대 8시간) ✅
-                  </label>
-                </div>
-                
-                {/* 주간 근무시간 제한 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    주간 근무시간 제한 (최대 40시간) ✅
-                  </label>
-                </div>
-                
-                {/* 개인 선호도 우선 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    개인 선호도 우선 ✅
-                  </label>
-                </div>
-                
-                {/* 업무량 균등 배분 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    업무량 균등 배분 ✅
-                  </label>
-                </div>
-                
-                {/* 직원별 배정 제한 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    직원별 배정 제한 (한 사람 몰빵 방지) ✅
-                  </label>
-                </div>
-                
-                {/* 최대 연속 근무일 제한 */}
-                <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <label className="text-sm font-medium text-green-800">
-                    최대 연속 배정 제한 (3일 연속까지만) ✅
-                  </label>
-                </div>
-              </div>
+              {showAdvancedConstraints && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    {/* 휴식시간 보장 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        휴식시간 보장 (11시간 연속) ✅
+                      </label>
+                    </div>
+                    
+                    {/* 연속근무일 제한 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        연속근무일 제한 (최대 6일) ✅
+                      </label>
+                    </div>
+                    
+                    {/* 주간 휴식 보장 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        주간 휴식 보장 (최소 1일) ✅
+                      </label>
+                    </div>
+                    
+                    {/* 일일 근무시간 제한 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        일일 근무시간 제한 (최대 8시간) ✅
+                      </label>
+                    </div>
+                    
+                    {/* 주간 근무시간 제한 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        주간 근무시간 제한 (최대 40시간) ✅
+                      </label>
+                    </div>
+                    
+                    {/* 개인 선호도 우선 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        개인 선호도 우선 ✅
+                      </label>
+                    </div>
+                    
+                    {/* 업무량 균등 배분 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        업무량 균등 배분 ✅
+                      </label>
+                    </div>
+                    
+                    {/* 직원별 배정 제한 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        직원별 배정 제한 (한 사람 몰빵 방지) ✅
+                      </label>
+                    </div>
+                    
+                    {/* 최대 연속 근무일 제한 */}
+                    <div className="flex items-center space-x-3 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <label className="text-sm font-medium text-green-800">
+                        최대 연속 배정 제한 (3일 연속까지만) ✅
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-xs text-blue-700">
+                      💡 <strong>모든 고급 제약사항이 자동으로 활성화</strong>되어 AI가 노동법과 직원 복지를 고려하여 
+                      안전하고 공정한 스케줄을 생성합니다. 사용자가 별도로 설정할 필요가 없습니다.
+                    </p>
+                  </div>
+                </>
+              )}
               
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-blue-700">
-                  💡 <strong>모든 고급 제약사항이 자동으로 활성화</strong>되어 AI가 노동법과 직원 복지를 고려하여 
-                  안전하고 공정한 스케줄을 생성합니다. 사용자가 별도로 설정할 필요가 없습니다.
-                </p>
-              </div>
+              {!showAdvancedConstraints && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 text-center">
+                    <span className="inline-flex items-center">
+                      <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                      모든 제약사항이 자동으로 적용됩니다
+                    </span>
+                    <br />
+                    <button 
+                      onClick={() => setShowAdvancedConstraints(true)}
+                      className="text-blue-600 hover:text-blue-700 underline text-sm mt-1"
+                    >
+                      자세히 보기
+                    </button>
+                  </p>
+                </div>
+              )}
             </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

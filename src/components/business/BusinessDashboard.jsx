@@ -291,28 +291,28 @@ const BusinessDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dashboard-container">
       {/* 헤더 */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <h1 className="text-3xl font-bold text-gray-900">{businessName || '업체'}</h1>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">안녕하세요, {currentUser?.displayName || '사장님'}!</span>
+      <header className="bg-white shadow header-mobile">
+        <div className="w-full px-2 sm:px-4">
+          <div className="flex justify-between items-center py-3 sm:py-6">
+            <h1 className="text-lg sm:text-3xl font-bold text-gray-900 text-responsive-xl">{businessName || '업체'}</h1>
+            <div className="flex items-center space-x-1 sm:space-x-4">
+              <span className="hidden sm:block text-xs sm:text-sm text-gray-600 text-responsive-xs">안녕하세요, {currentUser?.displayName || '사장님'}!</span>
               <button
                 onClick={handleProfileClick}
-                className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                className="flex items-center px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 nav-button-mobile touch-target"
               >
-                <User className="h-4 w-4 mr-2" />
-                프로필
+                <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">프로필</span>
               </button>
               <button
                 onClick={handleLogout}
                 disabled={loading}
-                className="flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                className="flex items-center px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 nav-button-mobile touch-target"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                로그아웃
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">로그아웃</span>
               </button>
             </div>
           </div>
@@ -321,8 +321,8 @@ const BusinessDashboard = () => {
 
       {/* 탭 네비게이션 */}
       <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
+        <div className="w-full px-2 sm:px-4">
+          <nav className="flex space-x-2 sm:space-x-6 responsive-tabs overflow-x-auto">
             {tabs.map((tab) => {
               let IconComponent;
               switch (tab.icon) {
@@ -349,7 +349,7 @@ const BusinessDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`flex items-center space-x-1 sm:space-x-2 py-2 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm tab-button-mobile touch-target ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -365,8 +365,10 @@ const BusinessDashboard = () => {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {renderContent()}
+      <main className="w-full py-3 sm:py-6 px-2 sm:px-4">
+        <div className="w-full">
+          {renderContent()}
+        </div>
       </main>
     </div>
   );
