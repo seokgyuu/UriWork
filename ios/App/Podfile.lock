@@ -1198,6 +1198,8 @@ PODS:
     - CapacitorCordova
   - CapacitorApp (7.0.2):
     - Capacitor
+  - CapacitorBrowser (7.0.2):
+    - Capacitor
   - CapacitorCommunityFirebaseAnalytics (7.0.1):
     - Capacitor
     - FirebaseAnalytics
@@ -1425,6 +1427,7 @@ PODS:
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
+  - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
   - "CapacitorCommunityFirebaseAnalytics (from `../../node_modules/@capacitor-community/firebase-analytics`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
@@ -1462,6 +1465,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorApp:
     :path: "../../node_modules/@capacitor/app"
+  CapacitorBrowser:
+    :path: "../../node_modules/@capacitor/browser"
   CapacitorCommunityFirebaseAnalytics:
     :path: "../../node_modules/@capacitor-community/firebase-analytics"
   CapacitorCordova:
@@ -1474,6 +1479,7 @@ SPEC CHECKSUMS:
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
   Capacitor: 9d9e481b79ffaeacaf7a85d6a11adec32bd33b59
   CapacitorApp: 1f6922c9c5c8b1c538d7fbe92ebe44a81b34bed3
+  CapacitorBrowser: 22541e48442de44dc629c214388290d6eecc6ae9
   CapacitorCommunityFirebaseAnalytics: d78673f52bc84e1138a9ce4f8208bd0f8c2b365c
   CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
   CapacitorDevice: 81ae78d5d1942707caad79276badd458bf6ec603
@@ -1499,6 +1505,6 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
 
-PODFILE CHECKSUM: 2d7d4af0f258c70f652db8dcf6f51d9c4108521a
+PODFILE CHECKSUM: 29998d937e548b127604002c5834af4f77fc6293
 
 COCOAPODS: 1.16.2

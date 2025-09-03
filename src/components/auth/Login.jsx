@@ -319,16 +319,16 @@ const Login = () => {
               </p>
               
               <div className="w-full">
-                {/* 네이티브 환경에서는 GIS 숨기고 네이티브 버튼만 노출 */}
+                {/* 네이티브 환경에서는 Apple 로그인만 제공 */}
                 {isNative ? (
-                  <button
-                    type="button"
-                    onClick={handleGoogleLoginNative}
-                    disabled={googleLoading || currentUser}
-                    className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-                  >
-                    {googleLoading ? 'Google 로그인 중...' : '앱에서 Google로 로그인'}
-                  </button>
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500 mb-3">
+                      📱 네이티브 앱에서는 Apple 로그인을 사용해주세요
+                    </p>
+                    <p className="text-xs text-gray-400 mb-4">
+                      Google 로그인이 필요하시면 웹 버전을 이용해주세요
+                    </p>
+                  </div>
                 ) : googleOAuthEnabled ? (
                   <>
                     <button

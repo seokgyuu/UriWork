@@ -10,6 +10,7 @@ import { signInWithPopup, GoogleAuthProvider, OAuthProvider, onAuthStateChanged,
 import { doc, setDoc, getDoc, updateDoc, collection, query, where } from 'firebase/firestore';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 
 // Firebase 모듈 직접 import (상대 경로 사용)
 import { auth, db } from '../firebase';
@@ -276,15 +277,36 @@ export const AuthProvider = ({ children }) => {
         // await loadFirebase(); // 이 부분은 제거되었으므로 주석 처리
       }
       
-      if (platform === 'ios' || platform === 'android') {
-        // 모바일(iOS/Android)은 항상 리다이렉트 사용
-        const provider = new GoogleAuthProvider();
-        provider.addScope('email');
-        provider.addScope('profile');
-        try { sessionStorage.setItem('PENDING_GOOGLE_REDIRECT', '1'); } catch (_) {}
-        console.log('⚡️  [log] - AuthContext: 모바일 플랫폼 → Google 리다이렉트 사용');
-        await signInWithRedirect(auth, provider);
-        return;
+      if (isNative) {
+        // 네이티브 환경에서는 인앱 브라우저를 통한 Google 로그인 사용
+        console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 → 인앱 브라우저 Google 로그인 사용');
+        
+        try {
+          // Google OAuth URL 생성
+          const clientId = '1014872932714-ajucckqftqrg962ibs498jedvu13por7.apps.googleusercontent.com';
+          const redirectUri = 'com.hass.uriwork://oauth/callback';
+          const scope = 'profile email';
+          
+          const authUrl = `https://accounts.google.com/oauth/authorize?` +
+            `client_id=${encodeURIComponent(clientId)}&` +
+            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+            `response_type=code&` +
+            `scope=${encodeURIComponent(scope)}&` +
+            `access_type=offline`;
+          
+          console.log('⚡️  [log] - AuthContext: 인앱 브라우저 열기:', authUrl);
+          
+          // 인앱 브라우저에서 Google 로그인 실행
+          const browserResult = await Browser.open({ url: authUrl });
+          console.log('⚡️  [log] - AuthContext: 인앱 브라우저 결과:', browserResult);
+          
+          // 이 방법은 추가 구현이 필요하므로 일단 에러 메시지 표시
+          throw new Error('인앱 브라우저 Google 로그인은 추가 구현이 필요합니다. Apple 로그인을 사용해주세요.');
+          
+        } catch (browserError) {
+          console.error('⚡️  [error] - AuthContext: 인앱 브라우저 Google 로그인 실패:', browserError);
+          throw browserError;
+        }
       }
       
       // 웹은 팝업 우선, 차단 시 리다이렉트로 폴백
