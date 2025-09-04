@@ -22,6 +22,8 @@ target 'App' do
   # Add your Pods here
   pod 'FirebaseAuth'
   pod 'FirebaseFirestore'
+  pod 'GoogleSignIn'
+  # GoogleUtilities는 Firebase와 GoogleSignIn이 자동으로 호환되는 버전을 설치하도록 함
 end
 
 post_install do |installer|

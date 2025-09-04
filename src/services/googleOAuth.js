@@ -92,8 +92,12 @@ class GoogleOAuthService {
     try {
       console.log('GoogleOAuth: OAuth 플로우 시작');
       
-      // Capacitor Browser 플러그인 사용
-      if (window.Capacitor) {
+      // Capacitor 환경에서 iOS Google Sign-In 사용
+      if (window.Capacitor && window.Capacitor.getPlatform() === 'ios') {
+        return await this.startIOSGoogleSignIn();
+      }
+      // Capacitor Browser 플러그인 사용 (Android)
+      else if (window.Capacitor) {
         const { Browser } = await import('@capacitor/browser');
         
         const authUrl = this.getAuthUrl();
@@ -129,6 +133,176 @@ class GoogleOAuthService {
     } catch (error) {
       console.error('GoogleOAuth: OAuth 플로우 에러:', error);
       throw error;
+    }
+  }
+
+  // iOS Google Sign-In 구현
+  async startIOSGoogleSignIn() {
+    try {
+      console.log('GoogleOAuth: iOS Google Sign-In 시작');
+      
+      // iOS에서 Google Sign-In을 위한 JavaScript 브릿지 구현
+      const result = await this.callIOSGoogleSignIn();
+      console.log('GoogleOAuth: iOS Google Sign-In 결과:', result);
+      
+      if (result.success && result.user) {
+        // Firebase Firestore에 사용자 데이터 저장
+        await this.saveUserToFirebase(result.user);
+        
+        // Firebase Auth와 연동
+        await this.linkWithFirebaseAuth(result.user);
+        
+        return {
+          user: result.user,
+          tokens: result.tokens
+        };
+      } else {
+        throw new Error(result.error || 'iOS Google Sign-In 실패');
+      }
+    } catch (error) {
+      console.error('GoogleOAuth: iOS Google Sign-In 에러:', error);
+      throw error;
+    }
+  }
+
+  // iOS 네이티브 Google Sign-In 호출
+  async callIOSGoogleSignIn() {
+    return new Promise((resolve, reject) => {
+      try {
+        console.log('GoogleOAuth: iOS 네이티브 Google Sign-In 호출');
+        
+        // iOS에서 Google Sign-In을 위한 JavaScript 브릿지
+        const script = `
+          (function() {
+            console.log('[iOS Google Sign-In] JavaScript 브릿지 시작');
+            
+            // Google Sign-In 플러그인 등록
+            if (!window.Capacitor) {
+              console.error('[iOS Google Sign-In] Capacitor를 찾을 수 없음');
+              return { success: false, error: 'Capacitor를 찾을 수 없습니다' };
+            }
+            
+            if (!window.Capacitor.Plugins) {
+              window.Capacitor.Plugins = {};
+            }
+            
+            // Google Sign-In 플러그인 구현
+            window.Capacitor.Plugins.GoogleSignIn = {
+              signIn: function() {
+                return new Promise((resolve, reject) => {
+                  console.log('[iOS Google Sign-In] 네이티브 호출 시작');
+                  
+                  // Promise를 전역에 저장
+                  window._googleSignInResolve = resolve;
+                  window._googleSignInReject = reject;
+                  
+                  // 네이티브 플러그인 호출을 위한 브릿지
+                  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.GoogleSignInPlugin) {
+                    console.log('[iOS Google Sign-In] 네이티브 핸들러로 메시지 전송');
+                    window.webkit.messageHandlers.GoogleSignInPlugin.postMessage({
+                      action: 'signIn'
+                    });
+                  } else {
+                    console.error('[iOS Google Sign-In] 네이티브 핸들러를 찾을 수 없음');
+                    reject(new Error('네이티브 Google Sign In 핸들러를 찾을 수 없습니다'));
+                  }
+                });
+              }
+            };
+            
+            console.log('[iOS Google Sign-In] 플러그인 등록 완료');
+            
+            // Google Sign-In 실행
+            window.Capacitor.Plugins.GoogleSignIn.signIn()
+              .then(result => {
+                console.log('[iOS Google Sign-In] 성공:', result);
+                return result;
+              })
+              .catch(error => {
+                console.error('[iOS Google Sign-In] 실패:', error);
+                throw error;
+              });
+          })();
+        `;
+        
+        // 스크립트 실행
+        if (window.webView) {
+          window.webView.evaluateJavaScript(script, (result, error) => {
+            if (error) {
+              console.error('GoogleOAuth: iOS 스크립트 실행 실패:', error);
+              reject(error);
+            } else {
+              console.log('GoogleOAuth: iOS 스크립트 실행 성공');
+            }
+          });
+        } else {
+          // WebView를 찾을 수 없는 경우 대체 방법
+          console.log('GoogleOAuth: WebView를 찾을 수 없음, 대체 방법 사용');
+          this.fallbackGoogleSignIn(resolve, reject);
+        }
+        
+        // 결과 처리 리스너 등록
+        this.setupIOSGoogleSignInListener(resolve, reject);
+        
+      } catch (error) {
+        console.error('GoogleOAuth: iOS Google Sign-In 호출 에러:', error);
+        reject(error);
+      }
+    });
+  }
+
+  // iOS Google Sign-In 결과 리스너 설정
+  setupIOSGoogleSignInListener(resolve, reject) {
+    // 전역 리스너 등록
+    window.addEventListener('googleSignInSuccess', (event) => {
+      console.log('GoogleOAuth: iOS Google Sign-In 성공 이벤트:', event.detail);
+      resolve(event.detail);
+    });
+    
+    window.addEventListener('googleSignInError', (event) => {
+      console.error('GoogleOAuth: iOS Google Sign-In 에러 이벤트:', event.detail);
+      reject(new Error(event.detail));
+    });
+  }
+
+  // 대체 Google Sign-In 방법 (WebView를 찾을 수 없는 경우)
+  fallbackGoogleSignIn(resolve, reject) {
+    try {
+      console.log('GoogleOAuth: 대체 Google Sign-In 방법 사용');
+      
+      // Firebase Auth의 Google Sign-In 사용
+      const { signInWithPopup, GoogleAuthProvider } = require('firebase/auth');
+      const { auth } = require('../firebase');
+      
+      const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      
+      signInWithPopup(auth, provider)
+        .then((result) => {
+          console.log('GoogleOAuth: Firebase Google Sign-In 성공:', result);
+          resolve({
+            success: true,
+            user: {
+              id: result.user.uid,
+              email: result.user.email,
+              name: result.user.displayName,
+              picture: result.user.photoURL,
+              verified_email: result.user.emailVerified
+            },
+            tokens: {
+              access_token: result.credential.accessToken,
+              id_token: result.credential.idToken
+            }
+          });
+        })
+        .catch((error) => {
+          console.error('GoogleOAuth: Firebase Google Sign-In 실패:', error);
+          reject(error);
+        });
+    } catch (error) {
+      console.error('GoogleOAuth: 대체 Google Sign-In 에러:', error);
+      reject(error);
     }
   }
 
@@ -239,24 +413,36 @@ class GoogleOAuthService {
     }
   }
 
-  // Firebase Auth와 연동 (선택사항)
+  // Firebase Auth와 연동
   async linkWithFirebaseAuth(userInfo) {
     try {
       console.log('GoogleOAuth: Firebase Auth 연동 시작');
       
-      // OAuth 사용자 정보를 Firebase Auth와 연동
-      // 실제 구현에서는 백엔드에서 Custom Token을 생성해야 함
-      // 여기서는 기본적인 연동 로직만 구현
-      
-      const customToken = await this.createCustomToken(userInfo);
-      if (customToken) {
-        await signInWithCustomToken(auth, customToken);
-        console.log('GoogleOAuth: Firebase Auth 연동 완료');
+      // iOS에서 Google Sign-In을 통해 받은 사용자 정보로 Firebase Auth 연동
+      if (window.Capacitor && window.Capacitor.getPlatform() === 'ios') {
+        // iOS에서는 이미 Google Sign-In을 통해 Firebase Auth가 처리됨
+        console.log('GoogleOAuth: iOS에서는 Google Sign-In이 Firebase Auth를 자동 처리');
+        return;
       }
+      
+      // Android나 웹에서는 OAuth 토큰을 사용하여 Firebase Auth 연동
+      const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+      
+      // OAuth 토큰으로 Firebase Auth credential 생성
+      const credential = GoogleAuthProvider.credential(
+        userInfo.id_token || userInfo.access_token
+      );
+      
+      // Firebase Auth에 로그인
+      const result = await signInWithCredential(auth, credential);
+      console.log('GoogleOAuth: Firebase Auth 연동 완료:', result.user.uid);
+      
+      return result;
       
     } catch (error) {
       console.error('GoogleOAuth: Firebase Auth 연동 에러:', error);
       // Firebase Auth 연동 실패해도 OAuth 로그인은 성공으로 처리
+      throw error;
     }
   }
 

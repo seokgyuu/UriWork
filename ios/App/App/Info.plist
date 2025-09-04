@@ -73,8 +73,6 @@
 				<string>TLSv1.0</string>
 				<key>NSExceptionRequiresForwardSecrecy</key>
 				<false/>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
 			</dict>
 			<key>googleapis.com</key>
 			<dict>
@@ -84,8 +82,6 @@
 				<string>TLSv1.0</string>
 				<key>NSExceptionRequiresForwardSecrecy</key>
 				<false/>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
 			</dict>
 			<key>firestore.googleapis.com</key>
 			<dict>
@@ -95,8 +91,6 @@
 				<string>TLSv1.0</string>
 				<key>NSExceptionRequiresForwardSecrecy</key>
 				<false/>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
 			</dict>
 			<key>identitytoolkit.googleapis.com</key>
 			<dict>
@@ -106,8 +100,6 @@
 				<string>TLSv1.0</string>
 				<key>NSExceptionRequiresForwardSecrecy</key>
 				<false/>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
 			</dict>
 			<key>securetoken.googleapis.com</key>
 			<dict>
@@ -117,8 +109,6 @@
 				<string>TLSv1.0</string>
 				<key>NSExceptionRequiresForwardSecrecy</key>
 				<false/>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
 			</dict>
 		</dict>
 	</dict>
@@ -140,25 +130,25 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
-    <key>UIApplicationSceneManifest</key>
-    <dict>
-        <key>UIApplicationSupportsMultipleScenes</key>
-        <false/>
-        <key>UISceneConfigurations</key>
-        <dict>
-            <key>UIWindowSceneSessionRoleApplication</key>
-            <array>
-                <dict>
-                    <key>UISceneConfigurationName</key>
-                    <string>Default Configuration</string>
-                    <key>UISceneDelegateClassName</key>
-                    <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-                    <key>UISceneStoryboardFile</key>
-                    <string>Main</string>
-                </dict>
-            </array>
-        </dict>
-    </dict>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>
