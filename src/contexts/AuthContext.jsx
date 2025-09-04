@@ -264,82 +264,128 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Google 로그인 - Firebase Auth 재초기화 방식
-  const loginWithGoogle = async () => {
-    try {
-      console.log('⚡️  [log] - AuthContext: Google 로그인 시작 (Firebase Auth 재초기화 방식)...');
-      
-      // 네이티브 환경 확인
-      if (Capacitor.isNativePlatform()) {
-        console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 감지');
-        throw new Error('네이티브 환경에서는 Google 로그인이 지원되지 않습니다.');
-      }
-      
-      // Firebase Auth 모듈 import
-      console.log('⚡️  [log] - AuthContext: Firebase Auth 모듈 import...');
-      const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
-      
-      // Firebase 앱 import
-      const { getApp } = await import('firebase/app');
-      
-      // Firebase 앱 가져오기
-      const app = getApp();
-      console.log('⚡️  [log] - AuthContext: Firebase 앱 가져오기 완료');
-      
-      // 새로운 Auth 인스턴스 생성
-      const newAuth = getAuth(app);
-      console.log('⚡️  [log] - AuthContext: 새로운 Auth 인스턴스 생성 완료');
-      
-      // GoogleAuthProvider 생성
-      const provider = new GoogleAuthProvider();
-      console.log('⚡️  [log] - AuthContext: GoogleAuthProvider 생성 완료');
-      
-      // 스코프 설정
-      provider.addScope('email');
-      provider.addScope('profile');
-      
-      // 커스텀 파라미터 설정
-      provider.setCustomParameters({
-        prompt: 'select_account'
-      });
-      
-      console.log('⚡️  [log] - AuthContext: Provider 설정 완료');
-      console.log('⚡️  [log] - AuthContext: - providerId:', provider.providerId);
-      console.log('⚡️  [log] - AuthContext: - scopes:', provider.scopes);
-      
-      // Firebase Auth 객체 검증
-      console.log('⚡️  [log] - AuthContext: 새로운 Firebase Auth 객체 검증...');
-      console.log('⚡️  [log] - AuthContext: - newAuth:', !!newAuth);
-      console.log('⚡️  [log] - AuthContext: - newAuth.app:', !!newAuth.app);
-      console.log('⚡️  [log] - AuthContext: - newAuth.app.options:', !!newAuth.app?.options);
-      console.log('⚡️  [log] - AuthContext: - newAuth.app.options.apiKey:', !!newAuth.app?.options?.apiKey);
-      console.log('⚡️  [log] - AuthContext: - newAuth.app.options.projectId:', !!newAuth.app?.options?.projectId);
-      
-      // signInWithPopup 실행
-      console.log('⚡️  [log] - AuthContext: signInWithPopup 실행 중...');
-      console.log('⚡️  [log] - AuthContext: newAuth 타입:', typeof newAuth);
-      console.log('⚡️  [log] - AuthContext: provider 타입:', typeof provider);
-      console.log('⚡️  [log] - AuthContext: signInWithPopup 타입:', typeof signInWithPopup);
-      
-      const result = await signInWithPopup(newAuth, provider);
-      
-      console.log('⚡️  [log] - AuthContext: Google 로그인 성공!');
-      console.log('⚡️  [log] - AuthContext: 사용자 정보:', {
-        uid: result.user.uid,
-        email: result.user.email,
-        displayName: result.user.displayName,
-        photoURL: result.user.photoURL
-      });
-      
-      // 사용자 정보를 Firestore에 저장
+      // OAuth 콜백 처리
+      const handleNativeGoogleSignIn = async (nativeResult) => {
       try {
-        await saveUserToFirestore(result.user, 'google', db);
-        console.log('⚡️  [log] - AuthContext: Firestore 저장 완료');
-      } catch (e) {
-        console.error('⚡️  [error] - AuthContext: Firestore 저장 실패:', e);
+        console.log('⚡️  [log] - AuthContext: 네이티브 Google Sign-In 결과 처리:', nativeResult);
+        
+        const { getAuth, GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+        
+        // 네이티브에서 받은 토큰으로 Firebase credential 생성
+        const credential = GoogleAuthProvider.credential(nativeResult.idToken, nativeResult.accessToken);
+        
+        // Firebase Auth로 로그인
+        const userCredential = await signInWithCredential(auth, credential);
+        console.log('⚡️  [log] - AuthContext: Firebase 로그인 성공:', userCredential.user);
+        
+        // 사용자 정보를 Firestore에 저장
+        try {
+          await saveUserToFirestore(userCredential.user, 'google', db);
+          console.log('⚡️  [log] - AuthContext: Firestore 저장 완료');
+        } catch (e) {
+          console.error('⚡️  [error] - AuthContext: Firestore 저장 실패:', e);
+        }
+        
+        return userCredential.user;
+      } catch (error) {
+        console.error('⚡️  [error] - AuthContext: 네이티브 Google Sign-In 처리 실패:', error);
+        throw error;
       }
-      
-      return result.user;
+    };
+
+  // Google 로그인 - 플랫폼별 처리
+    const loginWithGoogle = async () => {
+      try {
+        console.log('⚡️  [log] - AuthContext: Google 로그인 시작...');
+        
+        // iOS에서는 네이티브 Google Sign-In SDK 사용
+        if (Capacitor.isNativePlatform()) {
+          console.log('⚡️  [log] - AuthContext: iOS 네이티브 플랫폼 - 네이티브 Google Sign-In 사용');
+          
+          // 네이티브 Google Sign-In 플러그인 호출
+          return new Promise((resolve, reject) => {
+            // 네이티브 메시지 리스너 등록
+            const handleNativeMessage = (event) => {
+              console.log('⚡️  [log] - AuthContext: 네이티브 메시지 받음:', event.detail);
+              
+              if (event.detail.type === 'GOOGLE_SIGN_IN_RESULT') {
+                window.removeEventListener('capacitorMessage', handleNativeMessage);
+                
+                if (event.detail.success) {
+                  // 네이티브에서 받은 Google 사용자 정보로 Firebase 로그인
+                  handleNativeGoogleSignIn(event.detail).then(resolve).catch(reject);
+                } else {
+                  reject(new Error(event.detail.error || 'Google Sign-In 실패'));
+                }
+              }
+            };
+            
+            window.addEventListener('capacitorMessage', handleNativeMessage);
+            
+            // Capacitor의 올바른 방식으로 네이티브 호출
+            try {
+              // Capacitor 플러그인 방식으로 호출
+              if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+                // App 플러그인을 통해 네이티브 호출
+                window.Capacitor.Plugins.App.addListener('appStateChange', (state) => {
+                  console.log('⚡️  [log] - AuthContext: App state change:', state);
+                });
+                
+                // 직접 JavaScript 실행으로 네이티브 메시지 전송
+                const script = `
+                  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.AppleSignInPlugin) {
+                    window.webkit.messageHandlers.AppleSignInPlugin.postMessage({
+                      action: 'googleSignIn'
+                    });
+                  } else {
+                    console.error('네이티브 핸들러를 찾을 수 없습니다');
+                  }
+                `;
+                
+                eval(script);
+                console.log('⚡️  [log] - AuthContext: 네이티브 Google Sign-In 요청 전송 (AppleSignInPlugin)');
+              } else {
+                // 대안: 직접 window.postMessage 사용
+                window.postMessage({
+                  type: 'GOOGLE_SIGN_IN'
+                }, '*');
+                console.log('⚡️  [log] - AuthContext: 네이티브 Google Sign-In 요청 전송 (postMessage)');
+              }
+            } catch (error) {
+              window.removeEventListener('capacitorMessage', handleNativeMessage);
+              console.error('⚡️  [error] - AuthContext: 네이티브 호출 에러:', error);
+              reject(error);
+            }
+          });
+        } else {
+          // 웹에서는 기존 방식 사용
+          console.log('⚡️  [log] - AuthContext: 웹 플랫폼 - 기존 방식 사용');
+          
+          const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+          const { getApp } = await import('firebase/app');
+          
+          const app = getApp();
+          const newAuth = getAuth(app);
+          const provider = new GoogleAuthProvider();
+          
+          provider.addScope('email');
+          provider.addScope('profile');
+          provider.setCustomParameters({
+            prompt: 'select_account'
+          });
+          
+          const result = await signInWithPopup(newAuth, provider);
+          
+          // 사용자 정보를 Firestore에 저장
+          try {
+            await saveUserToFirestore(result.user, 'google', db);
+            console.log('⚡️  [log] - AuthContext: Firestore 저장 완료');
+          } catch (e) {
+            console.error('⚡️  [error] - AuthContext: Firestore 저장 실패:', e);
+          }
+          
+          return result.user;
+        }
       
     } catch (error) {
       console.error('⚡️  [error] - AuthContext: Google 로그인 실패:', error);

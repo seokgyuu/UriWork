@@ -46,6 +46,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("[Firebase] GoogleService-Info.plist path: \(path)")
         }
         
+        // URL 스킴 처리 설정
+        if let url = launchOptions?[UIApplication.LaunchOptionsKey.url] as? URL {
+            print("[AppDelegate] 앱 시작 시 URL 처리: \(url)")
+            handleURL(url)
+        }
+        
         // Window 설정 (iOS 12 이하는 AppDelegate에서 처리, iOS 13+는 SceneDelegate 처리)
         if #available(iOS 13.0, *) {
             // iOS 13+에서는 SceneDelegate가 윈도우를 관리합니다.
@@ -104,7 +110,232 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     // MARK: - URL Scheme Handling
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-        return GIDSignIn.sharedInstance.handle(url)
+        print("[AppDelegate] URL 처리: \(url)")
+        
+        // Google Sign-In URL 처리
+        if GIDSignIn.sharedInstance.handle(url) {
+            print("[AppDelegate] Google Sign-In URL 처리됨")
+            return true
+        }
+        
+        // OAuth 콜백 URL 처리
+        if handleURL(url) {
+            return true
+        }
+        
+        return false
+    }
+    
+    // MARK: - JavaScript Message Handling
+    func handleJavaScriptMessage(_ message: [String: Any]) {
+        print("[AppDelegate] JavaScript 메시지 받음: \(message)")
+        
+        if let type = message["type"] as? String {
+            switch type {
+            case "GOOGLE_SIGN_IN":
+                handleGoogleSignIn()
+            default:
+                print("[AppDelegate] 알 수 없는 메시지 타입: \(type)")
+            }
+        }
+    }
+    
+    // AppleSignInPlugin에서 Google Sign-In 요청 처리
+    func handleAppleSignInMessage(_ message: [String: Any]) {
+        print("[AppDelegate] AppleSignInPlugin 메시지 받음: \(message)")
+        
+        if let action = message["action"] as? String {
+            switch action {
+            case "googleSignIn":
+                print("[AppDelegate] Google Sign-In 요청 받음")
+                handleGoogleSignIn()
+            case "signIn":
+                print("[AppDelegate] Apple Sign-In 요청 받음")
+                // Apple Sign-In 로직은 기존대로 처리
+            default:
+                print("[AppDelegate] 알 수 없는 액션: \(action)")
+            }
+        }
+    }
+    
+    func handleGoogleSignIn() {
+        print("[AppDelegate] Google Sign-In 시작")
+        
+        guard let presentingViewController = getPresentingViewController() else {
+            print("[AppDelegate] Presenting view controller를 찾을 수 없습니다")
+            return
+        }
+        
+        GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController) { [weak self] (signInResult: GIDSignInResult?, error: Error?) in
+            if let error = error {
+                print("[AppDelegate] Google Sign-In 에러: \(error)")
+                self?.sendJavaScriptMessage([
+                    "type": "GOOGLE_SIGN_IN_RESULT",
+                    "success": false,
+                    "error": error.localizedDescription
+                ])
+                return
+            }
+            
+            guard let result = signInResult else {
+                print("[AppDelegate] Google Sign-In 결과가 없습니다")
+                self?.sendJavaScriptMessage([
+                    "type": "GOOGLE_SIGN_IN_RESULT",
+                    "success": false,
+                    "error": "Sign-In 결과가 없습니다"
+                ])
+                return
+            }
+            
+            print("[AppDelegate] Google Sign-In 성공: \(result.user.profile?.email ?? "이메일 없음")")
+            
+            // JavaScript로 결과 전달
+            self?.sendJavaScriptMessage([
+                "type": "GOOGLE_SIGN_IN_RESULT",
+                "success": true,
+                "idToken": result.user.idToken?.tokenString ?? "",
+                "accessToken": result.user.accessToken.tokenString,
+                "email": result.user.profile?.email ?? "",
+                "name": result.user.profile?.name ?? "",
+                "profileImageURL": result.user.profile?.imageURL(withDimension: 200)?.absoluteString ?? ""
+            ])
+        }
+    }
+    
+    func sendJavaScriptMessage(_ message: [String: Any]) {
+        guard let webView = getWebView() else {
+            print("[AppDelegate] WebView를 찾을 수 없습니다")
+            return
+        }
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: message, options: [])
+            let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+            let script = "window.dispatchEvent(new CustomEvent('capacitorMessage', { detail: \(jsonString) }));"
+            
+            print("[AppDelegate] JavaScript 실행: \(script)")
+            
+            DispatchQueue.main.async {
+                webView.evaluateJavaScript(script) { result, error in
+                    if let error = error {
+                        print("[AppDelegate] JavaScript 실행 에러: \(error)")
+                    } else {
+                        print("[AppDelegate] JavaScript 실행 성공: \(result ?? "nil")")
+                    }
+                }
+            }
+        } catch {
+            print("[AppDelegate] JSON 직렬화 에러: \(error)")
+        }
+    }
+    
+    // Presenting View Controller 가져오기
+    func getPresentingViewController() -> UIViewController? {
+        if #available(iOS 13.0, *) {
+            // iOS 13+에서는 SceneDelegate에서 가져오기
+            if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
+                return sceneDelegate.getPresentingViewController()
+            }
+        } else {
+            // iOS 12 이하에서는 AppDelegate에서 직접 관리
+            return window?.rootViewController
+        }
+        return nil
+    }
+    
+    // URL 스킴 처리 메서드
+    func handleURL(_ url: URL) -> Bool {
+        print("[AppDelegate] URL 스킴 처리: \(url)")
+        print("[AppDelegate] URL scheme: \(url.scheme ?? "nil")")
+        print("[AppDelegate] URL host: \(url.host ?? "nil")")
+        print("[AppDelegate] URL path: \(url.path)")
+        print("[AppDelegate] URL query: \(url.query ?? "nil")")
+        
+        // OAuth 콜백 URL 확인
+        if url.scheme == "com.hass.uriwork" && url.host == "oauth" && url.path == "/callback" {
+            print("[AppDelegate] OAuth 콜백 URL 감지: \(url)")
+            
+            // URL 파라미터에서 authorization code 추출
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let queryItems = components.queryItems {
+                
+                print("[AppDelegate] Query items: \(queryItems)")
+                
+                var code: String?
+                var error: String?
+                
+                for item in queryItems {
+                    print("[AppDelegate] Query item: \(item.name) = \(item.value ?? "nil")")
+                    if item.name == "code" {
+                        code = item.value
+                    } else if item.name == "error" {
+                        error = item.value
+                    }
+                }
+                
+                if let error = error {
+                    print("[AppDelegate] OAuth 에러: \(error)")
+                    // JavaScript로 에러 전달
+                    DispatchQueue.main.async {
+                        if let webView = self.getWebView() {
+                            let script = "window.dispatchEvent(new CustomEvent('oauthError', { detail: { error: '\(error)' } }));"
+                            print("[AppDelegate] JavaScript 실행: \(script)")
+                            webView.evaluateJavaScript(script) { result, error in
+                                if let error = error {
+                                    print("[AppDelegate] JavaScript 실행 에러: \(error)")
+                                } else {
+                                    print("[AppDelegate] JavaScript 실행 성공: \(result ?? "nil")")
+                                }
+                            }
+                        } else {
+                            print("[AppDelegate] WebView를 찾을 수 없습니다")
+                        }
+                    }
+                    return true
+                }
+                
+                if let code = code {
+                    print("[AppDelegate] Authorization code 받음: \(code)")
+                    // JavaScript로 코드 전달
+                    DispatchQueue.main.async {
+                        if let webView = self.getWebView() {
+                            let script = "window.dispatchEvent(new CustomEvent('oauthSuccess', { detail: { code: '\(code)' } }));"
+                            print("[AppDelegate] JavaScript 실행: \(script)")
+                            webView.evaluateJavaScript(script) { result, error in
+                                if let error = error {
+                                    print("[AppDelegate] JavaScript 실행 에러: \(error)")
+                                } else {
+                                    print("[AppDelegate] JavaScript 실행 성공: \(result ?? "nil")")
+                                }
+                            }
+                        } else {
+                            print("[AppDelegate] WebView를 찾을 수 없습니다")
+                        }
+                    }
+                    return true
+                }
+            } else {
+                print("[AppDelegate] URL 파라미터를 파싱할 수 없습니다")
+            }
+        } else {
+            print("[AppDelegate] OAuth 콜백 URL이 아닙니다")
+        }
+        
+        return false
+    }
+    
+    // WebView 가져오기 메서드
+    func getWebView() -> WKWebView? {
+        if #available(iOS 13.0, *) {
+            // iOS 13+에서는 SceneDelegate에서 WebView 가져오기
+            if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
+                return sceneDelegate.webView
+            }
+        } else {
+            // iOS 12 이하에서는 AppDelegate에서 직접 관리
+            return window?.rootViewController?.view.subviews.compactMap { $0 as? WKWebView }.first
+        }
+        return nil
     }
 
     // MARK: - Core Data stack
@@ -466,6 +697,17 @@ class AppleSignInPlugin: NSObject, ASAuthorizationControllerDelegate, ASAuthoriz
         print("[AppleSignInPlugin] WKScriptMessageHandler 메시지 수신: name=\(message.name), body=\(message.body)")
         
         if message.name == "AppleSignInPlugin" {
+            // Google Sign-In 요청 처리
+            if let body = message.body as? [String: Any],
+               let action = body["action"] as? String,
+               action == "googleSignIn" {
+                print("[AppleSignInPlugin] Google Sign-In 요청 감지")
+                // AppDelegate의 Google Sign-In 처리 메서드 호출
+                if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
+                    appDelegate.handleAppleSignInMessage(body)
+                }
+                return
+            }
             if let body = message.body as? [String: Any],
                let action = body["action"] as? String,
                action == "signIn" {

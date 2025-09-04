@@ -7,6 +7,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     var appleSignInPlugin: AppleSignInPlugin?
     private var pluginRegistered = false
+    
+    // WebView에 대한 공개 접근자
+    var webView: WKWebView? {
+        return findWebView()
+    }
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
@@ -142,6 +147,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             }
         }
         return nil
+    }
+    
+    // Presenting View Controller 가져오기
+    func getPresentingViewController() -> UIViewController? {
+        return window?.rootViewController
     }
 }
 
