@@ -124,6 +124,13 @@ const ProtectedRoute = ({ children, userType }) => {
     return <Navigate to="/user-type" replace />;
   }
 
+  // 사용자 타입에 따라 적절한 대시보드로 자동 리다이렉트
+  if (userData.user_type === 'business' && location.pathname === '/profile') {
+    return <Navigate to="/business" replace />;
+  } else if (userData.user_type === 'worker' && location.pathname === '/profile') {
+    return <Navigate to="/worker" replace />;
+  }
+
   return children;
 };
 

@@ -309,54 +309,58 @@ const WorkersManagement = ({ currentUser, workFields }) => {
         ) : workers.length > 0 ? (
           <div className="space-y-4">
             {workers.map((worker, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900">
-                      {worker.worker_name || worker.worker_email?.split('@')[0] || '이름 없음'}
-                    </h4>
-                    <p className="text-sm text-gray-600">{worker.worker_email}</p>
-                    <p className="text-xs text-gray-500">
-                      권한 부여일: {new Date(worker.granted_at).toLocaleDateString('ko-KR')}
-                    </p>
-                    {worker.assigned_tasks && worker.assigned_tasks.length > 0 && (
-                      <div className="mt-2">
-                        <p className="text-xs text-gray-500 mb-1">할당된 업무:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {worker.assigned_tasks.slice(0, 3).map((task, idx) => (
-                            <span key={idx} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                              {task.task_name}
-                            </span>
-                          ))}
-                          {worker.assigned_tasks.length > 3 && (
-                            <span className="text-xs text-gray-500">
-                              +{worker.assigned_tasks.length - 3}개 더
-                            </span>
-                          )}
+              <div key={index} className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-medium text-gray-900 truncate">
+                        {worker.worker_name || worker.worker_email?.split('@')[0] || '이름 없음'}
+                      </h4>
+                      <p className="text-sm text-gray-600 truncate">{worker.worker_email}</p>
+                      <p className="text-xs text-gray-500">
+                        권한 부여일: {new Date(worker.granted_at).toLocaleDateString('ko-KR')}
+                      </p>
+                      {worker.assigned_tasks && worker.assigned_tasks.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-500 mb-1">할당된 업무:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {worker.assigned_tasks.slice(0, 3).map((task, idx) => (
+                              <span key={idx} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                {task.task_name}
+                              </span>
+                            ))}
+                            {worker.assigned_tasks.length > 3 && (
+                              <span className="text-xs text-gray-500">
+                                +{worker.assigned_tasks.length - 3}개 더
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    활성
-                  </span>
-                  <button
-                    onClick={() => handleViewWorkerProfile(worker)}
-                    className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
-                  >
-                    프로필 보기
-                  </button>
-                  <button
-                    onClick={() => handlePermissionResponse(worker.worker_id, 'rejected')}
-                    className="text-xs text-red-600 hover:text-red-800"
-                  >
-                    권한 해제
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full self-start">
+                      활성
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleViewWorkerProfile(worker)}
+                        className="text-xs text-blue-600 hover:text-blue-800 px-3 py-1 rounded border border-blue-200 hover:bg-blue-50 whitespace-nowrap"
+                      >
+                        프로필 보기
+                      </button>
+                      <button
+                        onClick={() => handlePermissionResponse(worker.worker_id, 'rejected')}
+                        className="text-xs text-red-600 hover:text-red-800 px-3 py-1 rounded border border-red-200 hover:bg-red-50 whitespace-nowrap"
+                      >
+                        권한 해제
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

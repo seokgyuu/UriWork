@@ -6,10 +6,10 @@
  */
 
 import React from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
@@ -22,6 +22,32 @@ import BookingForm from './components/booking/BookingForm';
 import Subscription from './components/subscription/Subscription';
 import Chatbot from './components/chatbot/Chatbot';
 import './App.css';
+
+// 메인 앱 컴포넌트 (인증 상태에 따른 라우팅)
+function AppContent() {
+  const { currentUser, loading, authStateReady } = useAuth();
+
+  // 인증 상태가 준비되지 않았거나 로딩 중일 때
+  if (!authStateReady || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 text-lg">앱을 불러오는 중...</p>
+          <p className="mt-2 text-gray-500 text-sm">잠시만 기다려주세요</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 로그인된 사용자가 있으면 적절한 대시보드로 리다이렉트
+  if (currentUser) {
+    return <Navigate to="/profile" replace />;
+  }
+
+  // 로그인되지 않은 경우 로그인 페이지로
+  return <Navigate to="/login" replace />;
+}
 
 function App() {
   return (
@@ -78,8 +104,8 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* 기본 리다이렉트 */}
-            <Route path="/" element={<Login />} />
+            {/* 기본 라우트 - 인증 상태에 따라 자동 리다이렉트 */}
+            <Route path="/" element={<AppContent />} />
           </Routes>
           <Toaster position="top-right" />
         </div>
