@@ -830,31 +830,49 @@ const WorkerDashboard = () => {
                   <Calendar className="w-4 h-4 mr-2" />
                   내 선호도 스케줄
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 grid-gap-responsive text-responsive-xs sm:text-sm mb-4">
-                  <div>
-                    <span className="text-blue-600">총 근무일:</span>
-                    <span className="ml-2 font-medium">
-                      {Object.values(mySchedule.preference_schedule.daily_preferences || {}).filter(day => day.length > 0).length}일
-                    </span>
+                <div className="space-y-3 mb-4">
+                  {/* 첫 번째 행 - 총 근무일과 선호 파트 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-white bg-opacity-50 p-3 rounded-lg border border-blue-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 text-sm font-medium">총 근무일</span>
+                        <span className="text-lg font-bold text-blue-800">
+                          {Object.values(mySchedule.preference_schedule.daily_preferences || {}).filter(day => day.length > 0).length}일
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-white bg-opacity-50 p-3 rounded-lg border border-blue-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 text-sm font-medium">선호 파트</span>
+                        <span className="text-lg font-bold text-blue-800">
+                          {new Set(Object.values(mySchedule.preference_schedule.daily_preferences || {}).flat()).size}개
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-blue-600">선호 파트:</span>
-                    <span className="ml-2 font-medium">
-                      {new Set(Object.values(mySchedule.preference_schedule.daily_preferences || {}).flat()).size}개
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-blue-600">상태:</span>
-                    <span className="ml-2 font-medium text-green-600">활성</span>
-                  </div>
-                  <div>
-                    <span className="text-blue-600">마지막 업데이트:</span>
-                    <span className="ml-2 font-medium">
-                      {mySchedule.preference_schedule.updated_at ? 
-                        new Date(mySchedule.preference_schedule.updated_at).toLocaleDateString('ko-KR') : 
-                        '정보 없음'
-                      }
-                    </span>
+                  
+                  {/* 두 번째 행 - 상태와 마지막 업데이트 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-white bg-opacity-50 p-3 rounded-lg border border-green-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-600 text-sm font-medium">상태</span>
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                          <span className="text-lg font-bold text-green-700">활성</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white bg-opacity-50 p-3 rounded-lg border border-blue-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 text-sm font-medium">마지막 업데이트</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          {mySchedule.preference_schedule.updated_at ? 
+                            new Date(mySchedule.preference_schedule.updated_at).toLocaleDateString('ko-KR') : 
+                            '정보 없음'
+                          }
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 

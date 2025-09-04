@@ -264,76 +264,121 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Google 로그인
-      const loginWithGoogle = async () => {
+  // Google 로그인 - Firebase Auth 재초기화 방식
+  const loginWithGoogle = async () => {
     try {
-      console.log('⚡️  [log] - AuthContext: Google 로그인 시작...');
-      const platform = isPlatform('ios') ? 'ios' : isPlatform('android') ? 'android' : 'web';
-      console.log('⚡️  [log] - AuthContext: 플랫폼:', platform);
+      console.log('⚡️  [log] - AuthContext: Google 로그인 시작 (Firebase Auth 재초기화 방식)...');
       
-      // Firebase 모듈이 로드되지 않은 경우 동적 로드
-      if (!auth || !db) {
-        console.log('⚡️  [log] - AuthContext: Firebase 모듈이 로드되지 않음, 동적 로드 시작...');
-        // await loadFirebase(); // 이 부분은 제거되었으므로 주석 처리
+      // 네이티브 환경 확인
+      if (Capacitor.isNativePlatform()) {
+        console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 감지');
+        throw new Error('네이티브 환경에서는 Google 로그인이 지원되지 않습니다.');
       }
       
-      if (isNative) {
-        // 네이티브 환경에서는 인앱 브라우저를 통한 Google 로그인 사용
-        console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 → 인앱 브라우저 Google 로그인 사용');
-        
-        try {
-          // Google OAuth URL 생성
-          const clientId = '1014872932714-ajucckqftqrg962ibs498jedvu13por7.apps.googleusercontent.com';
-          const redirectUri = 'com.hass.uriwork://oauth/callback';
-          const scope = 'profile email';
-          
-          const authUrl = `https://accounts.google.com/oauth/authorize?` +
-            `client_id=${encodeURIComponent(clientId)}&` +
-            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-            `response_type=code&` +
-            `scope=${encodeURIComponent(scope)}&` +
-            `access_type=offline`;
-          
-          console.log('⚡️  [log] - AuthContext: 인앱 브라우저 열기:', authUrl);
-          
-          // 인앱 브라우저에서 Google 로그인 실행
-          const browserResult = await Browser.open({ url: authUrl });
-          console.log('⚡️  [log] - AuthContext: 인앱 브라우저 결과:', browserResult);
-          
-          // 이 방법은 추가 구현이 필요하므로 일단 에러 메시지 표시
-          throw new Error('인앱 브라우저 Google 로그인은 추가 구현이 필요합니다. Apple 로그인을 사용해주세요.');
-          
-        } catch (browserError) {
-          console.error('⚡️  [error] - AuthContext: 인앱 브라우저 Google 로그인 실패:', browserError);
-          throw browserError;
-        }
-      }
+      // Firebase Auth 모듈 import
+      console.log('⚡️  [log] - AuthContext: Firebase Auth 모듈 import...');
+      const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
       
-      // 웹은 팝업 우선, 차단 시 리다이렉트로 폴백
+      // Firebase 앱 import
+      const { getApp } = await import('firebase/app');
+      
+      // Firebase 앱 가져오기
+      const app = getApp();
+      console.log('⚡️  [log] - AuthContext: Firebase 앱 가져오기 완료');
+      
+      // 새로운 Auth 인스턴스 생성
+      const newAuth = getAuth(app);
+      console.log('⚡️  [log] - AuthContext: 새로운 Auth 인스턴스 생성 완료');
+      
+      // GoogleAuthProvider 생성
       const provider = new GoogleAuthProvider();
+      console.log('⚡️  [log] - AuthContext: GoogleAuthProvider 생성 완료');
+      
+      // 스코프 설정
       provider.addScope('email');
       provider.addScope('profile');
-      const result = await signInWithPopup(auth, provider);
-      console.log('⚡️  [log] - AuthContext: Google 팝업 로그인 성공:', result.user);
-      try { await saveUserToFirestore(result.user, 'google', db); } catch (e) { console.error('Firestore 저장 실패', e); }
+      
+      // 커스텀 파라미터 설정
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      console.log('⚡️  [log] - AuthContext: Provider 설정 완료');
+      console.log('⚡️  [log] - AuthContext: - providerId:', provider.providerId);
+      console.log('⚡️  [log] - AuthContext: - scopes:', provider.scopes);
+      
+      // Firebase Auth 객체 검증
+      console.log('⚡️  [log] - AuthContext: 새로운 Firebase Auth 객체 검증...');
+      console.log('⚡️  [log] - AuthContext: - newAuth:', !!newAuth);
+      console.log('⚡️  [log] - AuthContext: - newAuth.app:', !!newAuth.app);
+      console.log('⚡️  [log] - AuthContext: - newAuth.app.options:', !!newAuth.app?.options);
+      console.log('⚡️  [log] - AuthContext: - newAuth.app.options.apiKey:', !!newAuth.app?.options?.apiKey);
+      console.log('⚡️  [log] - AuthContext: - newAuth.app.options.projectId:', !!newAuth.app?.options?.projectId);
+      
+      // signInWithPopup 실행
+      console.log('⚡️  [log] - AuthContext: signInWithPopup 실행 중...');
+      console.log('⚡️  [log] - AuthContext: newAuth 타입:', typeof newAuth);
+      console.log('⚡️  [log] - AuthContext: provider 타입:', typeof provider);
+      console.log('⚡️  [log] - AuthContext: signInWithPopup 타입:', typeof signInWithPopup);
+      
+      const result = await signInWithPopup(newAuth, provider);
+      
+      console.log('⚡️  [log] - AuthContext: Google 로그인 성공!');
+      console.log('⚡️  [log] - AuthContext: 사용자 정보:', {
+        uid: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        photoURL: result.user.photoURL
+      });
+      
+      // 사용자 정보를 Firestore에 저장
+      try {
+        await saveUserToFirestore(result.user, 'google', db);
+        console.log('⚡️  [log] - AuthContext: Firestore 저장 완료');
+      } catch (e) {
+        console.error('⚡️  [error] - AuthContext: Firestore 저장 실패:', e);
+      }
+      
       return result.user;
       
     } catch (error) {
       console.error('⚡️  [error] - AuthContext: Google 로그인 실패:', error);
+      console.error('⚡️  [error] - AuthContext: 에러 코드:', error.code);
+      console.error('⚡️  [error] - AuthContext: 에러 메시지:', error.message);
       
       if (error.code === 'auth/popup-closed-by-user') {
         throw new Error('로그인이 취소되었습니다.');
       } else if (error.code === 'auth/popup-blocked') {
-        // 팝업이 차단된 경우 리다이렉트 시도
         console.log('⚡️  [log] - AuthContext: 팝업 차단됨 → 리다이렉트 시도');
+        try {
         const provider = new GoogleAuthProvider();
         provider.addScope('email');
         provider.addScope('profile');
-        
         await signInWithRedirect(auth, provider);
         return;
+        } catch (redirectError) {
+          console.error('⚡️  [error] - AuthContext: 리다이렉트도 실패:', redirectError);
+          throw new Error('Google 로그인에 실패했습니다. 팝업과 리다이렉트 모두 차단되었습니다.');
+        }
+      } else if (error.code === 'auth/argument-error') {
+        console.error('⚡️  [error] - AuthContext: Firebase 설정 문제 감지');
+        console.error('⚡️  [error] - AuthContext: 가능한 원인:');
+        console.error('⚡️  [error] - AuthContext: 1. Firebase 콘솔에서 Google 로그인 프로바이더가 비활성화됨');
+        console.error('⚡️  [error] - AuthContext: 2. 잘못된 API 키 또는 도메인 설정');
+        console.error('⚡️  [error] - AuthContext: 3. Firebase 프로젝트 설정 오류');
+        console.error('⚡️  [error] - AuthContext: 4. 브라우저 팝업 차단');
+        console.error('⚡️  [error] - AuthContext: 5. Firebase Auth 버전 호환성 문제');
+        console.error('⚡️  [error] - AuthContext: 6. Google OAuth 클라이언트 ID 설정 문제');
+        
+        // 추가 디버깅 정보
+        console.error('⚡️  [error] - AuthContext: 현재 Firebase 설정:');
+        console.error('⚡️  [error] - AuthContext: - API Key:', auth.app?.options?.apiKey);
+        console.error('⚡️  [error] - AuthContext: - Project ID:', auth.app?.options?.projectId);
+        console.error('⚡️  [error] - AuthContext: - Auth Domain:', auth.app?.options?.authDomain);
+        
+        throw new Error('Firebase 설정에 문제가 있습니다. Firebase 콘솔에서 Google 로그인을 활성화해주세요.');
       } else {
-        throw error;
+        throw new Error(`Google 로그인 실패: ${error.message}`);
       }
     }
   };

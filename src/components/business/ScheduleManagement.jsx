@@ -190,49 +190,52 @@ const ScheduleManagement = ({ currentUser }) => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : workers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
             {workers.map((worker) => (
-              <div key={worker.worker_id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200">
+              <div key={worker.worker_id} className="bg-white border border-gray-200 rounded-lg p-4 lg:p-6 hover:shadow-lg transition-all duration-200 h-full flex flex-col">
+                {/* 헤더 섹션 - 프로필과 상태 */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <User className="h-6 w-6 text-white" />
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 text-lg">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-semibold text-gray-900 text-lg truncate">
                         {worker.display_name || worker.email?.split('@')[0] || '이름 없음'}
                       </h4>
-                      <p className="text-sm text-gray-500 flex items-center">
-                        <Mail className="h-3 w-3 mr-1" />
-                        {worker.email}
+                      <p className="text-sm text-gray-500 flex items-center truncate">
+                        <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
+                        <span className="truncate">{worker.email}</span>
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                      활성
-                    </span>
+                  <div className="flex-shrink-0 ml-3">
+                    <div className="flex items-center px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                      <span className="text-xs font-medium text-green-700 whitespace-nowrap">
+                        활성
+                      </span>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="space-y-3 mb-4">
+                <div className="space-y-3 mb-4 flex-1">
                   {worker.phone && (
                     <div className="flex items-center text-sm text-gray-600">
-                      <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                      {worker.phone}
+                      <Phone className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{worker.phone}</span>
                     </div>
                   )}
                   {worker.address && (
                     <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                      {worker.address}
+                      <MapPin className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{worker.address}</span>
                     </div>
                   )}
                   <div className="flex items-center text-sm text-gray-600">
-                    <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                    <Clock className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
                     <span className="font-medium">할당된 업무:</span> 
-                    <span className="ml-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                    <span className="ml-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 whitespace-nowrap">
                       {worker.assigned_tasks?.length || 0}개
                     </span>
                   </div>
@@ -240,7 +243,7 @@ const ScheduleManagement = ({ currentUser }) => {
                 
                 <button
                   onClick={() => handleViewWorkerSchedule(worker)}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center space-x-2"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center space-x-2 mt-auto"
                 >
                   <Calendar className="h-4 w-4" />
                   <span>스케줄 보기</span>
@@ -384,33 +387,51 @@ const ScheduleManagement = ({ currentUser }) => {
                         <Calendar className="w-4 h-4 mr-2" />
                         개인 선호도 스케줄
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                      <div>
-                          <span className="text-blue-600">총 근무일:</span>
-                        <span className="ml-2 font-medium">
-                          {Object.values(selectedWorker.schedule.daily_preferences || {}).filter(day => day.length > 0).length}일
-                        </span>
+                      <div className="space-y-3 mb-4">
+                        {/* 첫 번째 행 - 총 근무일과 선호 파트 */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="bg-white bg-opacity-50 p-3 rounded-lg border border-blue-100">
+                            <div className="flex items-center justify-between">
+                              <span className="text-blue-600 text-sm font-medium">총 근무일</span>
+                              <span className="text-lg font-bold text-blue-800">
+                                {Object.values(selectedWorker.schedule.daily_preferences || {}).filter(day => day.length > 0).length}일
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bg-white bg-opacity-50 p-3 rounded-lg border border-blue-100">
+                            <div className="flex items-center justify-between">
+                              <span className="text-blue-600 text-sm font-medium">선호 파트</span>
+                              <span className="text-lg font-bold text-blue-800">
+                                {new Set(Object.values(selectedWorker.schedule.daily_preferences || {}).flat()).size}개
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* 두 번째 행 - 상태와 마지막 업데이트 */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="bg-white bg-opacity-50 p-3 rounded-lg border border-green-100">
+                            <div className="flex items-center justify-between">
+                              <span className="text-green-600 text-sm font-medium">상태</span>
+                              <div className="flex items-center">
+                                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                <span className="text-lg font-bold text-green-700">활성</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="bg-white bg-opacity-50 p-3 rounded-lg border border-blue-100">
+                            <div className="flex items-center justify-between">
+                              <span className="text-blue-600 text-sm font-medium">마지막 업데이트</span>
+                              <span className="text-sm font-medium text-gray-700">
+                                {selectedWorker.schedule.updated_at ? 
+                                  new Date(selectedWorker.schedule.updated_at).toLocaleDateString('ko-KR') : 
+                                  '정보 없음'
+                                }
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                          <span className="text-blue-600">선호 파트:</span>
-                        <span className="ml-2 font-medium">
-                          {new Set(Object.values(selectedWorker.schedule.daily_preferences || {}).flat()).size}개
-                        </span>
-                      </div>
-                      <div>
-                          <span className="text-blue-600">상태:</span>
-                        <span className="ml-2 font-medium text-green-600">활성</span>
-                      </div>
-                      <div>
-                          <span className="text-blue-600">마지막 업데이트:</span>
-                        <span className="ml-2 font-medium">
-                          {selectedWorker.schedule.updated_at ? 
-                            new Date(selectedWorker.schedule.updated_at).toLocaleDateString('ko-KR') : 
-                            '정보 없음'
-                          }
-                        </span>
-                      </div>
-                    </div>
                       
                       {/* 요일별 선호도 표시 */}
                       <div className="grid grid-cols-7 gap-2 text-xs">
