@@ -8,7 +8,7 @@
 import axios from 'axios';
 import { auth } from '../firebase';
 
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = 'http://172.30.1.5:8001';
 
 // Axios 인스턴스 생성
 const api = axios.create({
