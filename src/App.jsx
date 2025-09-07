@@ -23,6 +23,11 @@ import Subscription from './components/subscription/Subscription';
 import Chatbot from './components/chatbot/Chatbot';
 import './App.css';
 
+// 개발 환경에서 더미 사용자 생성 - 제거됨
+// if (import.meta.env.DEV) {
+//   import('./utils/createDummyUsers');
+// }
+
 // 메인 앱 컴포넌트 (인증 상태에 따른 라우팅)
 function AppContent() {
   const { currentUser, loading, authStateReady } = useAuth();

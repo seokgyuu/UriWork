@@ -1,6 +1,6 @@
 /**
- * 노동자 관리 컴포넌트
- * 피고용자 권한 요청 처리, 노동자 프로필 관리 기능
+ * 직원 관리 컴포넌트
+ * 직원 권한 요청 처리, 직원 프로필 관리 기능
  */
 
 import React, { useState, useEffect } from 'react';
@@ -16,14 +16,14 @@ const WorkersManagement = ({ currentUser, workFields }) => {
   const [selectedWorkFields, setSelectedWorkFields] = useState([]);
   const [availableWorkFields, setAvailableWorkFields] = useState([]);
 
-  // 피고용자 목록과 권한 요청 가져오기
+  // 직원 목록과 권한 요청 가져오기
   const fetchWorkers = async () => {
     setLoading(true);
     try {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const { db } = await import('../../firebase');
       
-      // 현재 업체에 권한이 있는 피고용자들 가져오기
+      // 현재 업체에 권한이 있는 직원들 가져오기
       const permissionsQuery = query(
         collection(db, 'permissions'), 
         where('business_id', '==', currentUser.uid),
@@ -35,7 +35,7 @@ const WorkersManagement = ({ currentUser, workFields }) => {
       for (const permissionDoc of permissionsSnapshot.docs) {
         const permission = permissionDoc.data();
         
-        // 피고용자 정보 가져오기
+        // 직원 정보 가져오기
         const userDoc = await getDocs(query(
           collection(db, 'users'), 
           where('uid', '==', permission.worker_id)
@@ -44,7 +44,7 @@ const WorkersManagement = ({ currentUser, workFields }) => {
         if (!userDoc.empty) {
           const userData = userDoc.docs[0].data();
           
-          // 노동자 프로필 정보 가져오기
+          // 직원 프로필 정보 가져오기
           const profileQuery = query(
             collection(db, 'worker_profiles'),
             where('worker_id', '==', permission.worker_id),
@@ -84,8 +84,8 @@ const WorkersManagement = ({ currentUser, workFields }) => {
       
       setPendingRequests(pendingList);
     } catch (error) {
-      console.error('피고용자 목록 가져오기 에러:', error);
-      toast.error('피고용자 목록을 불러오는데 실패했습니다.');
+      console.error('직원 목록 가져오기 에러:', error);
+      toast.error('직원 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -107,7 +107,7 @@ const WorkersManagement = ({ currentUser, workFields }) => {
       if (status === 'active') {
         toast.success('권한이 승인되었습니다.');
         
-        // 승인된 피고용자 정보 가져오기
+        // 승인된 직원 정보 가져오기
         const permissionQuery = query(
           collection(db, 'permissions'),
           where('worker_id', '==', workerId),
@@ -119,7 +119,7 @@ const WorkersManagement = ({ currentUser, workFields }) => {
         if (!permissionSnapshot.empty) {
           const permission = permissionSnapshot.docs[0].data();
           
-          // 피고용자 정보 가져오기
+          // 직원 정보 가져오기
           const userDoc = await getDocs(query(
             collection(db, 'users'), 
             where('uid', '==', workerId)
@@ -132,7 +132,7 @@ const WorkersManagement = ({ currentUser, workFields }) => {
               ...userData
             };
             
-            // 바로 노동자 프로필 모달 열기
+            // 바로 직원 프로필 모달 열기
             handleViewWorkerProfile(workerData);
           }
         }
@@ -150,7 +150,7 @@ const WorkersManagement = ({ currentUser, workFields }) => {
     }
   };
 
-  // 노동자 프로필 보기
+  // 직원 프로필 보기
   const handleViewWorkerProfile = async (worker) => {
     setSelectedWorker(worker);
     setShowWorkerProfile(true);
@@ -159,7 +159,7 @@ const WorkersManagement = ({ currentUser, workFields }) => {
     // 파트 관리에서 등록된 주요업무 사용
     setAvailableWorkFields(workFields || []);
     
-    // 기존에 저장된 노동자 프로필 불러오기
+    // 기존에 저장된 직원 프로필 불러오기
     try {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const { db } = await import('../../firebase');
@@ -183,11 +183,11 @@ const WorkersManagement = ({ currentUser, workFields }) => {
         }
       }
     } catch (error) {
-      console.error('노동자 프로필 불러오기 에러:', error);
+      console.error('직원 프로필 불러오기 에러:', error);
     }
   };
 
-  // 노동자 프로필 닫기
+  // 직원 프로필 닫기
   const handleCloseWorkerProfile = () => {
     setShowWorkerProfile(false);
     setSelectedWorker(null);
@@ -209,14 +209,14 @@ const WorkersManagement = ({ currentUser, workFields }) => {
     setSelectedWorkFields(prev => prev.filter(field => field.task_id !== taskId));
   };
 
-  // 노동자 프로필 저장
+  // 직원 프로필 저장
   const handleSaveWorkerProfile = async () => {
     try {
       setLoading(true);
       const { collection, doc, setDoc } = await import('firebase/firestore');
       const { db } = await import('../../firebase');
       
-      // 노동자 프로필 데이터 준비
+      // 직원 프로필 데이터 준비
       const workerProfileData = {
         worker_id: selectedWorker.worker_id,
         business_id: currentUser.uid,
@@ -229,24 +229,24 @@ const WorkersManagement = ({ currentUser, workFields }) => {
         updated_at: new Date().toISOString()
       };
       
-      // Firebase에 노동자 프로필 저장
+      // Firebase에 직원 프로필 저장
       const profileId = `worker_profile_${selectedWorker.worker_id}_${currentUser.uid}`;
       await setDoc(doc(db, 'worker_profiles', profileId), workerProfileData);
       
-      toast.success('노동자 프로필이 저장되었습니다.');
+      toast.success('직원 프로필이 저장되었습니다.');
       handleCloseWorkerProfile();
       
       // 목록 새로고침
       fetchWorkers();
     } catch (error) {
-      console.error('노동자 프로필 저장 에러:', error);
-      toast.error('노동자 프로필 저장에 실패했습니다.');
+      console.error('직원 프로필 저장 에러:', error);
+      toast.error('직원 프로필 저장에 실패했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
-  // 컴포넌트 마운트 시 피고용자 목록 가져오기
+  // 컴포넌트 마운트 시 직원 목록 가져오기
   useEffect(() => {
     fetchWorkers();
   }, []);
@@ -297,14 +297,14 @@ const WorkersManagement = ({ currentUser, workFields }) => {
         </div>
       )}
 
-      {/* 피고용자 목록 */}
+      {/* 직원 목록 */}
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">피고용자 목록</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">직원 목록</h3>
         
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="text-gray-600 mt-2">피고용자 목록을 불러오는 중...</p>
+            <p className="text-gray-600 mt-2">직원 목록을 불러오는 중...</p>
           </div>
         ) : workers.length > 0 ? (
           <div className="space-y-4">
@@ -368,20 +368,20 @@ const WorkersManagement = ({ currentUser, workFields }) => {
         ) : (
           <div className="text-center py-8">
             <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">아직 등록된 피고용자가 없습니다.</p>
+            <p className="text-gray-600">아직 등록된 직원가 없습니다.</p>
             <p className="text-sm text-gray-500 mt-2">
-              프로필에서 고유 코드를 생성하여 피고용자에게 전달해보세요.
+              프로필에서 고유 코드를 생성하여 직원에게 전달해보세요.
             </p>
           </div>
         )}
       </div>
 
-      {/* 노동자 프로필 모달 */}
+      {/* 직원 프로필 모달 */}
       {showWorkerProfile && selectedWorker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">노동자 프로필</h3>
+              <h3 className="text-lg font-medium text-gray-900">직원 프로필</h3>
               <button
                 onClick={handleCloseWorkerProfile}
                 className="text-gray-400 hover:text-gray-600"
@@ -456,7 +456,7 @@ const WorkersManagement = ({ currentUser, workFields }) => {
                   )}
                   
                   <p className="text-xs text-gray-500">
-                    파트 관리에서 등록한 주요업무를 선택하여 노동자에게 할당할 수 있습니다.
+                    파트 관리에서 등록한 주요업무를 선택하여 직원에게 할당할 수 있습니다.
                   </p>
                 </div>
               </div>

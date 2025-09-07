@@ -575,7 +575,7 @@ const EmployerScheduleGenerator = () => {
         console.log(`- 사용할 worker_id: ${workerId}`);
         
         return {
-          worker_id: workerId, // 실제 노동자 ID 사용
+          worker_id: workerId, // 실제 직원 ID 사용
           employee_name: employeeName, // 실제 직원 이름 추가
           business_id: currentUser.uid,
           department_id: pref.department_id || departments[0]?.department_id || departments[0]?.id || newDepartmentStaffing[0]?.department_id,
@@ -1601,7 +1601,7 @@ const EmployerScheduleGenerator = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="p-3 sm:p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           AI 스케줄 생성 시스템
@@ -1609,7 +1609,7 @@ const EmployerScheduleGenerator = () => {
         <p className="text-gray-600">
           직원들의 선호도를 통합하여 최적의 스케줄을 자동으로 생성합니다.
         </p>
-              </div>
+      </div>
 
       {/* 탭 네비게이션 */}
       <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">

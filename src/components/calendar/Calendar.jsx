@@ -107,7 +107,7 @@ const Calendar = () => {
       return true;
     }
     
-    // 피고용자인 경우 Firebase에서 권한 확인
+    // 직원인 경우 Firebase에서 권한 확인
     try {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const { db } = await import('../../firebase');
@@ -120,14 +120,14 @@ const Calendar = () => {
       );
       const permissionSnapshot = await getDocs(permissionQuery);
       
-      console.log('피고용자 권한 확인:', {
+      console.log('직원 권한 확인:', {
         permissionCount: permissionSnapshot.size,
         hasPermission: !permissionSnapshot.empty,
         permissions: permissionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       });
       
       if (!permissionSnapshot.empty) {
-        console.log('피고용자 권한 확인됨');
+        console.log('직원 권한 확인됨');
         setIsBusinessOwner(false);
         setHasPermission(true);
         return true;
@@ -163,13 +163,13 @@ const Calendar = () => {
         bookingsQuery = query(collection(db, 'bookings'), where('business_id', '==', businessId));
         console.log('고용자용 예약 쿼리 생성:', businessId);
       } else {
-        // 피고용자는 자신의 예약만 볼 수 있음
+        // 직원는 자신의 예약만 볼 수 있음
         bookingsQuery = query(
           collection(db, 'bookings'), 
           where('business_id', '==', businessId),
           where('worker_id', '==', currentUser.uid)
         );
-        console.log('피고용자용 예약 쿼리 생성:', { businessId, workerId: currentUser.uid });
+        console.log('직원용 예약 쿼리 생성:', { businessId, workerId: currentUser.uid });
       }
       
       console.log('Firestore 쿼리 실행 중...');
@@ -226,13 +226,13 @@ const Calendar = () => {
         bookingsQuery = query(collection(db, 'bookings'), where('business_id', '==', businessId));
         console.log('고용자용 결근 쿼리 생성:', businessId);
       } else {
-        // 피고용자는 자신의 결근만 볼 수 있음
+        // 직원는 자신의 결근만 볼 수 있음
         bookingsQuery = query(
           collection(db, 'bookings'), 
           where('business_id', '==', businessId),
           where('worker_id', '==', currentUser.uid)
         );
-        console.log('피고용자용 결근 쿼리 생성:', { businessId, workerId: currentUser.uid });
+        console.log('직원용 결근 쿼리 생성:', { businessId, workerId: currentUser.uid });
       }
       
       console.log('Firestore 결근 쿼리 실행 중...');

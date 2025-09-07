@@ -278,7 +278,7 @@ const Profile = () => {
       case 'business':
         return '업체 (사업자)';
       case 'worker':
-        return '노동자';
+        return '직원';
       default:
         return '미설정';
     }
@@ -487,12 +487,12 @@ const Profile = () => {
                     </div>
                   )}
                   <p className="text-xs text-gray-500 mt-1">
-                    이 고유번호를 피고용자에게 전달하여 캘린더 접근 권한을 부여할 수 있습니다.
+                    이 고유번호를 직원에게 전달하여 캘린더 접근 권한을 부여할 수 있습니다.
                   </p>
                 </div>
               )}
 
-              {/* 업체 고유번호 입력 (노동자 사용자만, 권한이 없을 때만) */}
+              {/* 업체 고유번호 입력 (직원 사용자만, 권한이 없을 때만) */}
               {userData?.user_type === 'worker' && permissionStatus?.status !== 'active' && (
                 <div>
                   <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
@@ -522,7 +522,7 @@ const Profile = () => {
                 </div>
               )}
 
-              {/* 권한 상태 표시 (노동자 사용자만, 권한이 있을 때) */}
+              {/* 권한 상태 표시 (직원 사용자만, 권한이 있을 때) */}
               {userData?.user_type === 'worker' && permissionStatus?.status === 'active' && (
                 <div>
                   <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">

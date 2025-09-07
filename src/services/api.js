@@ -66,7 +66,7 @@ export const businessAPI = {
   generateWorkerCode: () => api.post('/business/generate-code'),
 };
 
-// 노동자 API
+// 직원 API
 export const workerAPI = {
   useCode: (code) => api.post(`/worker/use-code/${code}`),
 };
@@ -171,7 +171,7 @@ export const scheduleAPI = {
   generateSchedule: (scheduleRequest) => api.post('/business/generate-schedule', scheduleRequest),
 };
 
-// 노동자 스케줄 API
+// 직원 스케줄 API
 export const workerScheduleAPI = {
   // 스케줄 선호도 설정
   setSchedulePreferences: (preferences) => api.post('/worker/schedule-preferences', preferences),

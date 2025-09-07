@@ -1,6 +1,6 @@
 /**
  * 스케줄 관리 컴포넌트
- * 노동자 스케줄 확인 및 관리 기능
+ * 직원 스케줄 확인 및 관리 기능
  */
 
 import React, { useState, useEffect } from 'react';
@@ -17,7 +17,7 @@ const ScheduleManagement = ({ currentUser }) => {
   const [aiGeneratedSchedule, setAiGeneratedSchedule] = useState(null);
   const [loadingAiSchedule, setLoadingAiSchedule] = useState(false);
 
-  // 노동자 목록 불러오기 (WorkersManagement와 동일한 방식)
+  // 직원 목록 불러오기 (WorkersManagement와 동일한 방식)
   const fetchWorkers = async () => {
     if (!currentUser) return;
     
@@ -26,7 +26,7 @@ const ScheduleManagement = ({ currentUser }) => {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const { db } = await import('../../firebase');
       
-      // 현재 업체에 권한이 있는 피고용자들 가져오기
+      // 현재 업체에 권한이 있는 직원들 가져오기
       const permissionsQuery = query(
         collection(db, 'permissions'), 
         where('business_id', '==', currentUser.uid),
@@ -38,7 +38,7 @@ const ScheduleManagement = ({ currentUser }) => {
       for (const permissionDoc of permissionsSnapshot.docs) {
         const permission = permissionDoc.data();
         
-        // 피고용자 정보 가져오기
+        // 직원 정보 가져오기
         const userDoc = await getDocs(query(
           collection(db, 'users'), 
           where('uid', '==', permission.worker_id)
@@ -47,7 +47,7 @@ const ScheduleManagement = ({ currentUser }) => {
         if (!userDoc.empty) {
           const userData = userDoc.docs[0].data();
           
-          // 노동자 프로필 정보 가져오기
+          // 직원 프로필 정보 가져오기
           const profileQuery = query(
             collection(db, 'worker_profiles'),
             where('worker_id', '==', permission.worker_id),
@@ -71,14 +71,14 @@ const ScheduleManagement = ({ currentUser }) => {
       
       setWorkers(workersList);
     } catch (error) {
-      console.error('노동자 목록 불러오기 에러:', error);
-      toast.error('노동자 목록을 불러오는데 실패했습니다.');
+      console.error('직원 목록 불러오기 에러:', error);
+      toast.error('직원 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoadingWorkers(false);
     }
   };
 
-  // 노동자 스케줄 불러오기
+  // 직원 스케줄 불러오기
   const fetchWorkerSchedule = async (workerId) => {
     try {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
@@ -97,7 +97,7 @@ const ScheduleManagement = ({ currentUser }) => {
       }
       return null;
     } catch (error) {
-      console.error('노동자 스케줄 불러오기 에러:', error);
+      console.error('직원 스케줄 불러오기 에러:', error);
       return null;
     }
   };
@@ -123,7 +123,7 @@ const ScheduleManagement = ({ currentUser }) => {
     }
   };
 
-  // 노동자 스케줄 보기 핸들러
+  // 직원 스케줄 보기 핸들러
   const handleViewWorkerSchedule = async (worker) => {
     setSelectedWorker(worker);
     
@@ -145,7 +145,7 @@ const ScheduleManagement = ({ currentUser }) => {
     setShowWorkerSchedule(true);
   };
 
-  // 노동자 스케줄 모달 닫기 핸들러
+  // 직원 스케줄 모달 닫기 핸들러
   const handleCloseWorkerSchedule = () => {
     setShowWorkerSchedule(false);
     setSelectedWorker(null);
@@ -165,7 +165,7 @@ const ScheduleManagement = ({ currentUser }) => {
     return colors[day] || 'bg-gray-100 text-gray-800';
   };
 
-  // 컴포넌트 마운트 시 노동자 목록 불러오기
+  // 컴포넌트 마운트 시 직원 목록 불러오기
   useEffect(() => {
     fetchWorkers();
   }, [currentUser]);
@@ -175,13 +175,13 @@ const ScheduleManagement = ({ currentUser }) => {
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-medium text-gray-900">노동자 스케줄 관리</h3>
+            <h3 className="text-lg font-medium text-gray-900">직원 스케줄 관리</h3>
             <p className="text-sm text-gray-600 mt-1">
-              등록된 노동자들의 스케줄을 확인하고 관리합니다.
+              등록된 직원들의 스케줄을 확인하고 관리합니다.
             </p>
           </div>
           <div className="text-sm text-gray-500">
-            총 {workers.length}명의 노동자
+            총 {workers.length}명의 직원
           </div>
         </div>
 
@@ -256,15 +256,15 @@ const ScheduleManagement = ({ currentUser }) => {
             <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
               <User className="h-10 w-10 text-gray-400" />
             </div>
-            <h4 className="text-xl font-medium text-gray-900 mb-3">등록된 노동자가 없습니다</h4>
+            <h4 className="text-xl font-medium text-gray-900 mb-3">등록된 직원가 없습니다</h4>
             <p className="text-gray-500 text-sm max-w-md mx-auto">
-              노동자 관리에서 노동자를 등록한 후 스케줄을 확인할 수 있습니다.
+              직원 관리에서 직원를 등록한 후 스케줄을 확인할 수 있습니다.
             </p>
           </div>
         )}
       </div>
 
-      {/* 노동자 스케줄 상세 모달 */}
+      {/* 직원 스케줄 상세 모달 */}
       {showWorkerSchedule && selectedWorker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -478,8 +478,8 @@ const ScheduleManagement = ({ currentUser }) => {
                     <Calendar className="h-8 w-8 text-gray-400" />
                   </div>
                   <h4 className="text-lg font-medium text-gray-900 mb-3">아직 설정된 스케줄이 없습니다</h4>
-                  <p className="text-gray-600 mb-2">노동자가 선호도 설정에서 스케줄을 설정하면 여기에 표시됩니다.</p>
-                  <p className="text-gray-400 text-sm">노동자 관리에서 스케줄 설정을 안내해주세요.</p>
+                  <p className="text-gray-600 mb-2">직원가 선호도 설정에서 스케줄을 설정하면 여기에 표시됩니다.</p>
+                  <p className="text-gray-400 text-sm">직원 관리에서 스케줄 설정을 안내해주세요.</p>
                 </div>
               )}
             </div>

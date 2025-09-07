@@ -13,10 +13,13 @@ import { Capacitor } from '@capacitor/core';
 // import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
 
 const Login = () => {
-  // 이메일/비밀번호 로그인 제거
+  // 이메일/비밀번호 로그인 상태 - 주석처리됨
+  // const [email, setEmail] = useState('');
+  // const [password, setPassword] = useState('');
+  // const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
-  const { loginWithGoogle, loginWithApple, currentUser } = useAuth();
+  const { loginWithGoogle, loginWithApple, /* loginWithEmail, */ currentUser } = useAuth();
   const navigate = useNavigate();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const googleOAuthEnabled = Boolean(googleClientId);
@@ -174,7 +177,32 @@ const Login = () => {
     checkRedirectResult();
   }, []);
 
-  // 이메일/비밀번호 로그인 핸들러 제거
+  // 이메일/비밀번호 로그인 핸들러 - 주석처리됨
+  // const handleEmailLogin = async (e) => {
+  //   e.preventDefault();
+  //   setEmailLoading(true);
+  //   
+  //   try {
+  //     console.log('Login: 이메일 로그인 시작:', email);
+  //     const user = await loginWithEmail(email, password);
+  //     
+  //     if (user) {
+  //       console.log('Login: 이메일 로그인 성공, 사용자:', user);
+  //       console.log('Login: 사용자 타입 선택 화면으로 이동');
+  //       
+  //       // 약간의 지연을 두고 네비게이션
+  //       setTimeout(() => {
+  //         navigate('/user-type');
+  //       }, 1000);
+  //     }
+  //   } catch (error) {
+  //     console.error('Login: 이메일 로그인 에러:', error);
+  //     alert(error.message || '로그인 중 오류가 발생했습니다.');
+  //   } finally {
+  //     setEmailLoading(false);
+  //   }
+  // };
+
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
@@ -300,18 +328,77 @@ const Login = () => {
             로그인
           </h2>
           <p className="mt-2 text-center text-xs sm:text-sm text-gray-600 text-responsive-sm">
-            계정이 없으신가요?{' '}
+            소셜 계정으로 로그인하세요
+            {/* 계정이 없으신가요?{' '}
             <Link
               to="/register"
               className="font-medium text-primary-600 hover:text-primary-500"
             >
               회원가입
-            </Link>
+            </Link> */}
           </p>
         </div>
         
         <div className="mt-4 sm:mt-8 space-y-4 sm:space-y-6">
           <div className="space-y-4 sm:space-y-6">
+            {/* 이메일/비밀번호 로그인 폼 - 주석처리됨 */}
+            {/* <form onSubmit={handleEmailLogin} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  이메일
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                  placeholder="이메일을 입력하세요"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  비밀번호
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                  placeholder="비밀번호를 입력하세요"
+                />
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={emailLoading || currentUser}
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                >
+                  {emailLoading ? '로그인 중...' : '로그인'}
+                </button>
+              </div>
+            </form> */}
+
+
+            {/* 구분선 */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-50 text-gray-500">또는</span>
+              </div>
+            </div>
+
             {/* Google / Apple 로그인 버튼 */}
             <div className="text-center">
               <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 text-responsive-sm">
@@ -443,8 +530,6 @@ const Login = () => {
                 </div>
               )}
             </div>
-            
-            {/* 이메일/비밀번호 로그인 UI 제거됨 */}
           </div>
         </div>
       </div>

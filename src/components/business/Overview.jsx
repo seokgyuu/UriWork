@@ -59,9 +59,9 @@ const Overview = memo(({ currentUser, departments, onNavigate }) => {
           <div className="flex items-center">
             <Users className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
             <div className="ml-3 sm:ml-4">
-              <p className="text-xs sm:text-sm font-medium text-gray-600 text-responsive-sm">피고용자</p>
+              <p className="text-xs sm:text-sm font-medium text-gray-600 text-responsive-sm">직원</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900 text-responsive-xl">관리</p>
-              <p className="text-xs text-orange-600 mt-1 text-responsive-xs">노동자 관리 →</p>
+              <p className="text-xs text-orange-600 mt-1 text-responsive-xs">직원 관리 →</p>
             </div>
           </div>
         </div>

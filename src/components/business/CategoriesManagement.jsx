@@ -543,9 +543,9 @@ const CategoriesManagement = ({ currentUser }) => {
   };
 
   return (
-    <div id="categories-section" className="space-y-6">
+    <div id="categories-section" className="space-y-0 sm:space-y-6">
       {/* 파트 관리 */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="p-3 sm:p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">파트 관리</h3>
         <p className="text-sm text-gray-600 mb-4">
           업체의 근무 시간대별 파트를 관리합니다.
@@ -597,7 +597,7 @@ const CategoriesManagement = ({ currentUser }) => {
           )}
 
           {/* 파트 등록 폼 */}
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1058,7 +1058,7 @@ const CategoriesManagement = ({ currentUser }) => {
       </div>
 
       {/* 주요업무 관리 */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="p-3 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h3 className="text-lg font-medium text-gray-900">주요업무 관리</h3>

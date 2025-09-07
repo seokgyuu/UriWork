@@ -1,7 +1,7 @@
 /**
  * 예약 폼 컴포넌트
  * 사용자가 서비스 예약을 할 수 있는 폼 페이지
- * 날짜, 시간, 서비스 종류, 노동자 선택 등을 포함
+ * 날짜, 시간, 서비스 종류, 직원 선택 등을 포함
  * 예약 생성 후 확인 페이지로 이동
  */
 
@@ -188,11 +188,11 @@ const BookingForm = () => {
               </select>
             </div>
 
-            {/* 노동자 정보 */}
+            {/* 직원 정보 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <User className="inline h-4 w-4 mr-1" />
-                노동자
+                직원
               </label>
               <input
                 type="text"
@@ -227,7 +227,7 @@ const BookingForm = () => {
                   <div>날짜: {formData.date}</div>
                   <div>시간: {formData.time}</div>
                   <div>선택: {formData.service_type}</div>
-                  <div>노동자: {currentUser?.email}</div>
+                  <div>직원: {currentUser?.email}</div>
                 </div>
               </div>
             )}

@@ -1,6 +1,6 @@
 /**
- * 노동자 대시보드 컴포넌트
- * 피고용자의 메인 대시보드 페이지
+ * 직원 대시보드 컴포넌트
+ * 직원의 메인 대시보드 페이지
  * 권한이 없으면 권한 요청 화면을 보여주고, 권한이 있으면 기능들을 사용할 수 있음
  * 스케줄 확인, 선호도 설정, 프로필 관리 등의 기능 제공
  */
@@ -22,7 +22,9 @@ import {
   Plus,
   Trash2,
   RefreshCw,
-  Briefcase
+  Briefcase,
+  Menu,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import WorkerPreference from './WorkerPreference';
@@ -45,9 +47,24 @@ const WorkerDashboard = () => {
   const [permissionStatus, setPermissionStatus] = useState(null);
   const [businessCode, setBusinessCode] = useState('');
   const [assignedTasks, setAssignedTasks] = useState([]);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mySchedule, setMySchedule] = useState(null);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
   // 자동 이동 제거: 권한이 active여도 대시보드 우선 표시
+
+  // 메뉴 외부 클릭 시 메뉴 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMenuOpen && !event.target.closest('.relative')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   // 권한 상태 확인 (동일 상태면 불필요한 업데이트 방지)
   const checkPermission = async () => {
@@ -403,7 +420,6 @@ const WorkerDashboard = () => {
   const tabs = [
     { id: 'overview', name: '개요', icon: Calendar },
     { id: 'schedule', name: '내 스케줄', icon: Calendar },
-    { id: 'preferences', name: '선호도 설정', icon: Settings },
     { id: 'profile', name: '프로필', icon: User }
   ];
 
@@ -438,25 +454,63 @@ const WorkerDashboard = () => {
           <div className="max-w-7xl mx-auto container-responsive">
             <div className="flex justify-between items-start sm:items-center py-3 sm:py-4 gap-3 touch-target">
               <h1 className="text-responsive-2xl sm:text-3xl font-bold text-gray-900 truncate max-w-[60vw] sm:max-w-none">
-                {permissionStatus?.businessName || '피고용자'}
+                {permissionStatus?.businessName || '직원'}
               </h1>
-              <div className="flex items-center flex-wrap gap-2 sm:gap-4 justify-end min-w-0">
+              <div className="flex items-center gap-2 sm:gap-4 justify-end min-w-0">
                 <span className="hidden sm:inline text-responsive-xs sm:text-sm text-gray-600 max-w-[40vw] truncate">안녕하세요, {currentUser?.displayName || '직원님'}!</span>
-                <button
-                  onClick={handleProfileClick}
-                  className="flex items-center px-2 sm:px-3 py-2 text-responsive-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 whitespace-nowrap"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  프로필
-                </button>
-                <button
-                  onClick={handleLogout}
-                  disabled={loading}
-                  className="flex items-center px-2 sm:px-3 py-2 text-responsive-xs sm:text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 whitespace-nowrap"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  로그아웃
-                </button>
+                
+                {/* 햄버거 메뉴 버튼 */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="flex items-center justify-center w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                  >
+                    {isMenuOpen ? (
+                      <X className="h-5 w-5" />
+                    ) : (
+                      <Menu className="h-5 w-5" />
+                    )}
+                  </button>
+                  
+                  {/* 드롭다운 메뉴 */}
+                  {isMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl border border-gray-200 z-[9999]">
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setActiveTab('preferences');
+                            setIsMenuOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <Settings className="h-4 w-4 mr-3" />
+                          선호도 설정
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleProfileClick();
+                            setIsMenuOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <User className="h-4 w-4 mr-3" />
+                          프로필
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleLogout();
+                            setIsMenuOpen(false);
+                          }}
+                          disabled={loading}
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                        >
+                          <LogOut className="h-4 w-4 mr-3" />
+                          로그아웃
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

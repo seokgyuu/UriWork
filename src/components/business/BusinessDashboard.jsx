@@ -1,7 +1,7 @@
 /**
  * 업체 대시보드 컴포넌트
  * 사업자(업체)가 사용하는 메인 대시보드 페이지
- * 예약 현황, 수익 통계, 노동자 관리, 캘린더 설정 등을 포함
+ * 예약 현황, 수익 통계, 직원 관리, 캘린더 설정 등을 포함
  * 업체의 전체적인 운영 현황을 한눈에 볼 수 있음
  * 스케줄 관리, 업종/파트/주요분야 설정 기능 추가
  */
@@ -17,7 +17,9 @@ import {
   Brain,
   Calendar,
   Briefcase,
-  Users
+  Users,
+  Menu,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -60,14 +62,28 @@ const BusinessDashboard = () => {
   const [newCategory, setNewCategory] = useState('');
   const [loading, setLoading] = useState(false);
   const [businessName, setBusinessName] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // 메뉴 외부 클릭 시 메뉴 닫기
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMenuOpen && !event.target.closest('.relative')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const tabs = [
     { id: 'overview', name: '개요', icon: 'Calendar' },
     { id: 'schedule', name: '스케줄 관리', icon: 'Calendar' },
     { id: 'ai-schedule', name: 'AI 스케줄 생성', icon: 'Brain' },
     { id: 'categories', name: '파트 관리', icon: 'Briefcase' },
-    { id: 'workers', name: '노동자 관리', icon: 'Users' },
-    { id: 'settings', name: '설정', icon: 'Settings' }
+    { id: 'workers', name: '직원 관리', icon: 'Users' }
   ];
 
   // Firebase에서 파트 불러오기
@@ -294,26 +310,64 @@ const BusinessDashboard = () => {
     <div className="min-h-screen bg-gray-50 dashboard-container">
       {/* 헤더 */}
       <header className="bg-white shadow header-mobile">
-        <div className="w-full px-2 sm:px-4">
+        <div className="w-full px-3 sm:px-4">
           <div className="flex justify-between items-center py-3 sm:py-6">
             <h1 className="text-lg sm:text-3xl font-bold text-gray-900 text-responsive-xl">{businessName || '업체'}</h1>
-            <div className="flex items-center space-x-1 sm:space-x-4">
+            <div className="flex items-center space-x-2">
               <span className="hidden sm:block text-xs sm:text-sm text-gray-600 text-responsive-xs">안녕하세요, {currentUser?.displayName || '사장님'}!</span>
-              <button
-                onClick={handleProfileClick}
-                className="flex items-center px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 nav-button-mobile touch-target"
-              >
-                <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">프로필</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                disabled={loading}
-                className="flex items-center px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 nav-button-mobile touch-target"
-              >
-                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">로그아웃</span>
-              </button>
+              
+              {/* 햄버거 메뉴 버튼 */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="flex items-center justify-center w-10 h-10 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                >
+                  {isMenuOpen ? (
+                    <X className="h-5 w-5" />
+                  ) : (
+                    <Menu className="h-5 w-5" />
+                  )}
+                </button>
+                
+                  {/* 드롭다운 메뉴 */}
+                  {isMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl border border-gray-200 z-[9999]">
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setActiveTab('settings');
+                            setIsMenuOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <Settings className="h-4 w-4 mr-3" />
+                          설정
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleProfileClick();
+                            setIsMenuOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <User className="h-4 w-4 mr-3" />
+                          프로필
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleLogout();
+                            setIsMenuOpen(false);
+                          }}
+                          disabled={loading}
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                        >
+                          <LogOut className="h-4 w-4 mr-3" />
+                          로그아웃
+                        </button>
+                      </div>
+                    </div>
+                  )}
+              </div>
             </div>
           </div>
         </div>
@@ -321,8 +375,8 @@ const BusinessDashboard = () => {
 
       {/* 탭 네비게이션 */}
       <div className="bg-white border-b">
-        <div className="w-full px-2 sm:px-4">
-          <nav className="flex space-x-2 sm:space-x-6 responsive-tabs overflow-x-auto">
+        <div className="w-full px-3 sm:px-4">
+          <nav className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               let IconComponent;
               switch (tab.icon) {
@@ -349,7 +403,7 @@ const BusinessDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-1 sm:space-x-2 py-2 sm:py-4 px-1 sm:px-2 border-b-2 font-medium text-xs sm:text-sm tab-button-mobile touch-target ${
+                  className={`flex items-center space-x-1 py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -365,7 +419,7 @@ const BusinessDashboard = () => {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <main className="w-full py-3 sm:py-6 px-2 sm:px-4">
+      <main className="w-full py-0 sm:py-6 px-0 sm:px-4">
         <div className="w-full">
           {renderContent()}
         </div>

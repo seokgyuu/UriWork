@@ -35,7 +35,7 @@ const Subscription = () => {
       color: 'bg-blue-500',
       features: [
         '기본 캘린더 관리',
-        '최대 5명 노동자',
+        '최대 5명 직원',
         '기본 예약 시스템',
         '이메일 지원'
       ],
@@ -50,7 +50,7 @@ const Subscription = () => {
       color: 'bg-purple-500',
       features: [
         '모든 기본 기능',
-        '최대 20명 노동자',
+        '최대 20명 직원',
         '고급 예약 시스템',
         '챗봇 지원',
         '우선 고객 지원',
@@ -67,7 +67,7 @@ const Subscription = () => {
       color: 'bg-yellow-500',
       features: [
         '모든 프리미엄 기능',
-        '무제한 노동자',
+        '무제한 직원',
         '맞춤형 통합',
         '전담 매니저',
         '24/7 지원',

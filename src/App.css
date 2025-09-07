@@ -29,8 +29,8 @@ img, video, canvas, svg {
 
 /* 컨테이너 패딩을 화면에 맞춰 유동적으로 */
 .container-responsive {
-  padding-left: clamp(12px, 3vw, 24px);
-  padding-right: clamp(12px, 3vw, 24px);
+  padding-left: clamp(8px, 2vw, 24px);
+  padding-right: clamp(8px, 2vw, 24px);
 }
 
 /* 그리드 갭 유동 */
@@ -59,6 +59,15 @@ img, video, canvas, svg {
 }
 .responsive-tabs::-webkit-scrollbar { height: 6px; }
 .responsive-tabs::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.15); border-radius: 9999px; }
+
+/* 스크롤바 숨기기 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
 
 /* iOS 안전영역 상단 패딩 및 고정 헤더, 터치 타겟 확장 */
 .safe-area-top {
@@ -173,6 +182,12 @@ html, body, #root { width: 100%; overflow-x: hidden; }
     padding: 8px 12px;
   }
   
+  /* 모바일에서 패딩 최소화 */
+  .dashboard-container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
   /* 네비게이션 버튼 크기 조정 */
   .nav-button-mobile {
     padding: 6px 10px;
@@ -207,6 +222,49 @@ html, body, #root { width: 100%; overflow-x: hidden; }
   max-width: none !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
+}
+
+/* 모바일에서 패딩 및 마진 완전 제거 */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  .dashboard-container header,
+  .dashboard-container main {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  /* 카드 스타일 제거 */
+  .dashboard-container .bg-white {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  /* AI 스케줄 생성 컴포넌트 카드 제거 */
+  .dashboard-container .max-w-6xl {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .dashboard-container .bg-gray-50 {
+    padding: 12px !important;
+  }
+  
+  /* 카드 간 간격 제거 */
+  .dashboard-container .space-y-6 > * + * {
+    margin-top: 0 !important;
+  }
+  
+  .dashboard-container .space-y-4 > * + * {
+    margin-top: 0 !important;
+  }
 }
 
 .full-width-grid {
