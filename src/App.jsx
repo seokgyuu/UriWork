@@ -38,14 +38,19 @@ function AppContent() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">앱을 불러오는 중...</p>
+          <p className="mt-4 text-gray-600 text-lg">UriWork를 불러오는 중...</p>
           <p className="mt-2 text-gray-500 text-sm">잠시만 기다려주세요</p>
+          <div className="mt-6 text-xs text-gray-400">
+            <p>• 스마트한 일정 관리</p>
+            <p>• 직원과의 효율적인 소통</p>
+            <p>• AI 기반 스케줄 최적화</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // 로그인된 사용자가 있으면 적절한 대시보드로 리다이렉트
+  // 로그인된 사용자가 있으면 ProtectedRoute에서 사용자 타입에 따라 적절한 대시보드로 리다이렉트
   if (currentUser) {
     return <Navigate to="/profile" replace />;
   }
@@ -68,6 +73,12 @@ function App() {
             
             {/* 보호된 라우트 */}
             <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/user-profile" element={
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>

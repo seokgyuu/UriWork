@@ -198,7 +198,7 @@ const BusinessDashboard = () => {
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    navigate('/user-profile');
   };
 
   const handleScheduleSettingsSave = async () => {
@@ -310,8 +310,8 @@ const BusinessDashboard = () => {
     <div className="min-h-screen bg-gray-50 dashboard-container">
       {/* 헤더 */}
       <header className="bg-white shadow header-mobile">
-        <div className="w-full px-3 sm:px-4">
-          <div className="flex justify-between items-center py-3 sm:py-6">
+        <div className="w-full px-3 sm:px-4 pt-4 sm:pt-6">
+          <div className="flex justify-between items-center py-4 sm:py-8">
             <h1 className="text-lg sm:text-3xl font-bold text-gray-900 text-responsive-xl">{businessName || '업체'}</h1>
             <div className="flex items-center space-x-2">
               <span className="hidden sm:block text-xs sm:text-sm text-gray-600 text-responsive-xs">안녕하세요, {currentUser?.displayName || '사장님'}!</span>
@@ -331,7 +331,7 @@ const BusinessDashboard = () => {
                 
                   {/* 드롭다운 메뉴 */}
                   {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl border border-gray-200 z-[9999]">
+                    <div className="absolute right-0 mt-2 w-48 bg-white/95 backdrop-blur-sm rounded-md shadow-xl border border-gray-200 z-[9999]">
                       <div className="py-1">
                         <button
                           onClick={() => {
@@ -419,7 +419,7 @@ const BusinessDashboard = () => {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <main className="w-full py-0 sm:py-6 px-0 sm:px-4">
+      <main className="w-full py-4 sm:py-8 px-0 sm:px-4">
         <div className="w-full">
           {renderContent()}
         </div>

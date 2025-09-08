@@ -302,8 +302,13 @@ const EmployerScheduleGenerator = () => {
       // 확정된 결근 데이터 로드
       await loadConfirmedAbsences();
 
-      // 생성된 스케줄 가져오기
-      await loadGeneratedSchedules();
+      // 생성된 스케줄 가져오기 (실패해도 계속 진행)
+      try {
+        await loadGeneratedSchedules();
+      } catch (scheduleError) {
+        console.warn('생성된 스케줄 로드 실패 (계속 진행):', scheduleError);
+        // 스케줄 로드 실패는 전체 로딩을 중단시키지 않음
+      }
       
     } catch (error) {
       console.error('AI 스케줄 생성 - 데이터 로드 실패:', error);
@@ -342,6 +347,11 @@ const EmployerScheduleGenerator = () => {
     } catch (error) {
       console.error('AI 스케줄 생성 - 스케줄 목록 로드 실패:', error);
       setGeneratedSchedules([]);
+      
+      // 네트워크 에러나 타임아웃 에러인 경우 사용자에게 알림
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        console.warn('백엔드 서버 연결에 실패했습니다. 서버가 실행 중인지 확인해주세요.');
+      }
     }
   };
 
@@ -2198,7 +2208,7 @@ const EmployerScheduleGenerator = () => {
               {loading ? (
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  생성 중...
+                  정보를 받아오는 중...
                 </div>
               ) : (
                 <>

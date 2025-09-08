@@ -894,12 +894,23 @@ class GoogleSignInPlugin: NSObject, WKScriptMessageHandler {
         
         if message.name == "GoogleSignInPlugin" {
             if let body = message.body as? [String: Any],
-               let action = body["action"] as? String,
-               action == "signIn" {
+               let action = body["action"] as? String {
                 
-                print("[GoogleSignInPlugin] Google Sign In 요청 받음")
-                handleGoogleSignIn()
+                print("[GoogleSignInPlugin] 액션: \(action)")
+                
+                if action == "googleSignIn" {
+                    print("[GoogleSignInPlugin] Google Sign In 요청 받음")
+                    DispatchQueue.main.async {
+                        self.handleGoogleSignIn()
+                    }
+                } else {
+                    print("[GoogleSignInPlugin] 알 수 없는 액션: \(action)")
+                }
+            } else {
+                print("[GoogleSignInPlugin] 잘못된 메시지 형식")
             }
+        } else {
+            print("[GoogleSignInPlugin] 잘못된 메시지 핸들러: \(message.name)")
         }
     }
     
@@ -913,7 +924,14 @@ class GoogleSignInPlugin: NSObject, WKScriptMessageHandler {
             return
         }
         
+        print("[GoogleSignInPlugin] Presenting ViewController 찾음: \(presentingViewController)")
+        
+        print("[GoogleSignInPlugin] GIDSignIn.sharedInstance.signIn 호출 시작...")
         GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController) { [weak self] (signInResult: GIDSignInResult?, error: Error?) in
+            print("[GoogleSignInPlugin] GIDSignIn 콜백 실행됨")
+            print("[GoogleSignInPlugin] signInResult: \(signInResult != nil ? "있음" : "없음")")
+            print("[GoogleSignInPlugin] error: \(error?.localizedDescription ?? "없음")")
+            
             if let error = error {
                 print("[GoogleSignInPlugin] Google Sign In 실패:", error)
                 self?.sendErrorToJavaScript(error.localizedDescription)
@@ -1005,70 +1023,52 @@ class GoogleSignInPlugin: NSObject, WKScriptMessageHandler {
     }
     
     private func sendSuccessToJavaScript(_ data: [String: Any]) {
-        guard let webView = webView else {
-            print("[GoogleSignInPlugin] WebView를 찾을 수 없어 JavaScript 결과 전송 실패")
-            return
-        }
-        
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
-            let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
-            
-            let script = """
-            console.log('[GoogleSignInPlugin] JavaScript에서 결과 수신 시작...');
-            
-            if (window._googleSignInResolve) {
-                console.log('[GoogleSignInPlugin] Promise resolve 함수 발견, 결과 전송...');
-                window._googleSignInResolve(\(jsonString));
-                delete window._googleSignInResolve;
-                console.log('[GoogleSignInPlugin] 결과 전송 완료, Promise resolve 함수 제거됨');
-            } else {
-                console.error('[GoogleSignInPlugin] Promise resolve 함수를 찾을 수 없음');
-                console.log('[GoogleSignInPlugin] window._googleSignInResolve:', typeof window._googleSignInResolve);
-            }
-            """
-            
-            print("[GoogleSignInPlugin] JavaScript 성공 스크립트 실행 시작")
-            webView.evaluateJavaScript(script) { result, error in
-                if let error = error {
-                    print("[GoogleSignInPlugin] JavaScript 결과 전송 실패:", error)
-                } else {
-                    print("[GoogleSignInPlugin] JavaScript 결과 전송 성공")
-                }
-            }
-        } catch {
-            print("[GoogleSignInPlugin] JSON 직렬화 실패:", error)
-            sendErrorToJavaScript("JSON 직렬화 실패: \(error.localizedDescription)")
-        }
+        var resultData = data
+        resultData["type"] = "GOOGLE_SIGN_IN_RESULT"
+        resultData["success"] = true
+        sendJavaScriptMessage(resultData)
     }
     
     private func sendErrorToJavaScript(_ errorMessage: String) {
+        let errorData: [String: Any] = [
+            "type": "GOOGLE_SIGN_IN_RESULT",
+            "success": false,
+            "error": errorMessage
+        ]
+        sendJavaScriptMessage(errorData)
+    }
+    
+    private func sendJavaScriptMessage(_ message: [String: Any]) {
+        print("[GoogleSignInPlugin] sendJavaScriptMessage 호출됨")
+        print("[GoogleSignInPlugin] 메시지 내용: \(message)")
+        
         guard let webView = webView else {
-            print("[GoogleSignInPlugin] WebView를 찾을 수 없어 JavaScript 에러 전송 실패")
+            print("[GoogleSignInPlugin] WebView를 찾을 수 없습니다")
             return
         }
         
-        let script = """
-        console.log('[GoogleSignInPlugin] JavaScript에서 에러 수신 시작...');
+        print("[GoogleSignInPlugin] WebView 찾음: \(webView)")
         
-        if (window._googleSignInReject) {
-            console.log('[GoogleSignInPlugin] Promise reject 함수 발견, 에러 전송...');
-            window._googleSignInReject(new Error("\(errorMessage)"));
-            delete window._googleSignInReject;
-            console.log('[GoogleSignInPlugin] 에러 전송 완료, Promise reject 함수 제거됨');
-        } else {
-            console.error('[GoogleSignInPlugin] Promise reject 함수를 찾을 수 없음');
-            console.log('[GoogleSignInPlugin] window._googleSignInReject:', typeof window._googleSignInReject);
-        }
-        """
-        
-        print("[GoogleSignInPlugin] JavaScript 에러 스크립트 실행 시작")
-        webView.evaluateJavaScript(script) { result, error in
-            if let error = error {
-                print("[GoogleSignInPlugin] JavaScript 에러 전송 실패:", error)
-            } else {
-                print("[GoogleSignInPlugin] JavaScript 에러 전송 성공")
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: message, options: [])
+            let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+            let script = "window.dispatchEvent(new CustomEvent('capacitorMessage', { detail: \(jsonString) }));"
+            
+            print("[GoogleSignInPlugin] JavaScript 스크립트 생성: \(script)")
+            
+            DispatchQueue.main.async {
+                print("[GoogleSignInPlugin] JavaScript 실행 시작...")
+                webView.evaluateJavaScript(script) { result, error in
+                    if let error = error {
+                        print("[GoogleSignInPlugin] JavaScript 실행 에러: \(error)")
+                    } else {
+                        print("[GoogleSignInPlugin] JavaScript 메시지 전송 성공")
+                        print("[GoogleSignInPlugin] JavaScript 실행 결과: \(result ?? "nil")")
+                    }
+                }
             }
+        } catch {
+            print("[GoogleSignInPlugin] JSON 직렬화 에러: \(error)")
         }
     }
     

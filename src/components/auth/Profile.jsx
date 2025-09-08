@@ -32,7 +32,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
-    email: ''
+    email: '',
+    business_name: ''
   });
   const [businessCode, setBusinessCode] = useState('');
   const [permissionStatus, setPermissionStatus] = useState(null);
@@ -45,7 +46,8 @@ const Profile = () => {
           setUserData(data);
           setEditForm({
             name: data?.name || currentUser.displayName || '',
-            email: data?.email || currentUser.email || ''
+            email: data?.email || currentUser.email || '',
+            business_name: data?.business_name || ''
           });
         } catch (error) {
           console.error('사용자 데이터 가져오기 에러:', error);
@@ -156,7 +158,8 @@ const Profile = () => {
     setIsEditing(false);
     setEditForm({
       name: userData?.name || currentUser.displayName || '',
-      email: userData?.email || currentUser.email || ''
+      email: userData?.email || currentUser.email || '',
+      business_name: userData?.business_name || ''
     });
   };
 
@@ -168,6 +171,7 @@ const Profile = () => {
       const updateData = {
         name: editForm.name,
         email: editForm.email,
+        business_name: editForm.business_name,
         user_type: userData?.user_type // 원래 사용자 타입 유지
       };
       
@@ -178,7 +182,8 @@ const Profile = () => {
       setUserData(prev => ({ 
         ...prev, 
         name: editForm.name,
-        email: editForm.email
+        email: editForm.email,
+        business_name: editForm.business_name
         // user_type은 변경하지 않음
       }));
       setIsEditing(false);
@@ -316,7 +321,7 @@ const Profile = () => {
       {/* 헤더 */}
       <header className="bg-white shadow header-mobile">
         <div className="w-full px-2 sm:px-4">
-          <div className="flex justify-between items-center py-3 sm:py-6">
+          <div className="flex justify-between items-center pt-6 pb-3 sm:pt-8 sm:pb-6">
             <h1 className="text-lg sm:text-3xl font-bold text-gray-900 text-responsive-xl">프로필</h1>
             <button
               onClick={() => navigate(-1)}
@@ -333,58 +338,56 @@ const Profile = () => {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {/* 프로필 헤더 */}
           <div className="px-4 sm:px-6 py-6 sm:py-8 border-b border-gray-200">
-            <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               <div className="h-16 w-16 sm:h-20 sm:w-20 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-responsive-xl sm:text-2xl font-bold text-gray-900 truncate">
-                  {userData?.name || currentUser.displayName || '사용자'}
-                </h2>
-                <p className="text-responsive-xs sm:text-sm text-gray-600 break-all">{currentUser.email}</p>
-                <div className="flex items-center mt-2">
-                  {getUserTypeIcon(userData?.user_type)}
-                  <span className="ml-2 text-responsive-xs sm:text-sm text-gray-600">
-                    {getUserTypeDisplay(userData?.user_type)}
-                  </span>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-responsive-xl sm:text-2xl font-bold text-gray-900 truncate">
+                      {userData?.name || currentUser.displayName || '사용자'}
+                    </h2>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-responsive-xs sm:text-sm text-gray-600 break-all">{currentUser.email}</p>
+                      <div className="flex items-center">
+                        {getUserTypeIcon(userData?.user_type)}
+                        <span className="ml-2 text-responsive-xs sm:text-sm text-gray-600">
+                          {getUserTypeDisplay(userData?.user_type)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0 ml-4">
+                    {!isEditing ? (
+                      <button
+                        onClick={handleEdit}
+                        className="flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-responsive-xs sm:text-sm"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        편집
+                      </button>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={handleSave}
+                          disabled={loading}
+                          className="flex items-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 text-responsive-xs sm:text-sm"
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          저장
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          className="flex items-center px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-responsive-xs sm:text-sm"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          취소
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {!isEditing ? (
-                  <button
-                    onClick={handleEdit}
-                    className="flex items-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-responsive-xs sm:text-sm"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    편집
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleSave}
-                      disabled={loading}
-                      className="flex items-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 text-responsive-xs sm:text-sm"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      저장
-                    </button>
-                    <button
-                      onClick={handleCancel}
-                      className="flex items-center px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-responsive-xs sm:text-sm"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      취소
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={handleLogout}
-                  disabled={loading}
-                  className="flex items-center px-3 sm:px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 text-responsive-xs sm:text-sm"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  로그아웃
-                </button>
               </div>
             </div>
           </div>
@@ -399,12 +402,15 @@ const Profile = () => {
                   이름
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">이름은 Google 계정에서 관리됩니다</p>
+                  </div>
                 ) : (
                   <p className="text-gray-900 break-words">{userData?.name || currentUser.displayName || '미설정'}</p>
                 )}
@@ -416,12 +422,15 @@ const Profile = () => {
                   이메일
                 </label>
                 {isEditing ? (
-                  <input
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div>
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">이메일은 Google 계정에서 관리됩니다</p>
+                  </div>
                 ) : (
                   <p className="text-gray-900 break-all">{userData?.email || currentUser.email}</p>
                 )}
@@ -449,6 +458,29 @@ const Profile = () => {
                   </p>
                 )}
               </div>
+
+              {/* 업체명 (업체 사용자만) */}
+              {userData?.user_type === 'business' && (
+                <div>
+                  <label className="block text-responsive-xs sm:text-sm font-medium text-gray-700 mb-2">
+                    업체명
+                  </label>
+                  {isEditing ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={editForm.business_name || ''}
+                        onChange={(e) => setEditForm({ ...editForm, business_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="업체명을 입력하세요"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">업체명만 수정 가능합니다</p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-900 break-words">{userData?.business_name || '미설정'}</p>
+                  )}
+                </div>
+              )}
 
               {/* 고유번호 (업체 사용자만) */}
               {userData?.user_type === 'business' && (

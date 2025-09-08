@@ -240,7 +240,7 @@ const WorkerDashboard = () => {
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    navigate('/user-profile');
   };
 
   // 권한 요청 처리
@@ -451,8 +451,8 @@ const WorkerDashboard = () => {
     try {
       return (
         <header className="bg-white shadow sticky-header safe-area-top">
-          <div className="max-w-7xl mx-auto container-responsive">
-            <div className="flex justify-between items-start sm:items-center py-3 sm:py-4 gap-3 touch-target">
+          <div className="max-w-7xl mx-auto container-responsive pt-4 sm:pt-6">
+            <div className="flex justify-between items-start sm:items-center py-4 sm:py-6 gap-3 touch-target">
               <h1 className="text-responsive-2xl sm:text-3xl font-bold text-gray-900 truncate max-w-[60vw] sm:max-w-none">
                 {permissionStatus?.businessName || '직원'}
               </h1>
@@ -474,7 +474,7 @@ const WorkerDashboard = () => {
                   
                   {/* 드롭다운 메뉴 */}
                   {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl border border-gray-200 z-[9999]">
+                    <div className="absolute right-0 mt-2 w-48 bg-white/95 backdrop-blur-sm rounded-md shadow-xl border border-gray-200 z-[9999]">
                       <div className="py-1">
                         <button
                           onClick={() => {
@@ -1136,7 +1136,7 @@ const WorkerDashboard = () => {
         <>
           {renderHeaderSafe()}
           {renderTabsSafe()}
-          <main className="w-full py-3 sm:py-6 px-2 sm:px-4">
+          <main className="w-full py-6 sm:py-8 px-2 sm:px-4">
             <div className="w-full">
               {safeMainContent}
             </div>

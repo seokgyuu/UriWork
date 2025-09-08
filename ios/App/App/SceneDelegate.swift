@@ -6,6 +6,7 @@ import WebKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     var appleSignInPlugin: AppleSignInPlugin?
+    var googleSignInPlugin: GoogleSignInPlugin?
     private var pluginRegistered = false
     
     // WebView에 대한 공개 접근자
@@ -24,8 +25,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
         window.makeKeyAndVisible()
 
-        // WebView 로드 후 AppleSignInPlugin 등록 시도 (Scene 환경)
+        // WebView 로드 후 플러그인 등록 시도 (Scene 환경)
         appleSignInPlugin = AppleSignInPlugin()
+        googleSignInPlugin = GoogleSignInPlugin()
         schedulePluginRegistrationRetries()
     }
 
@@ -49,6 +51,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let plugin = appleSignInPlugin {
             userContentController.add(plugin, name: "AppleSignInPlugin")
             print("[SceneDelegate] AppleSignInPlugin 등록 완료.")
+        }
+        
+        // GoogleSignInPlugin 등록
+        googleSignInPlugin?.setWebView(webView)
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "GoogleSignInPlugin")
+        if let googlePlugin = googleSignInPlugin {
+            userContentController.add(googlePlugin, name: "GoogleSignInPlugin")
+            print("[SceneDelegate] GoogleSignInPlugin 등록 완료.")
         }
 
         // JavaScript에서 플러그인을 사용할 수 있도록 설정
