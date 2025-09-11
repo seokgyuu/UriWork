@@ -1,0 +1,29 @@
+# Jekyll configuration for GitHub Pages
+title: UriWork
+description: AI 기반 스케줄 생성과 예약 관리 시스템
+baseurl: "/UriWork"
+url: "https://seokgyuu.github.io"
+
+# Disable Jekyll processing for HTML files
+include: []
+exclude: []
+keep_files: []
+
+# Markdown processing
+markdown: kramdown
+highlighter: rouge
+
+# Build settings
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# SEO settings
+author: seokgyuu
+twitter_username: seokgyuu
+github_username: seokgyuu
+
+# Site settings
+lang: ko
+timezone: Asia/Seoul
