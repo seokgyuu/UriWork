@@ -116,6 +116,11 @@ security = HTTPBearer()
 
 app = FastAPI(title="캘린더 예약 시스템 API")
 
+# 헬스 체크 엔드포인트
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "서버가 정상적으로 실행 중입니다."}
+
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,

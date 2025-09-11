@@ -159,18 +159,31 @@ const BusinessDashboard = () => {
     if (!currentUser) return;
     
     try {
-      const response = await businessManagementAPI.getBusinesses();
+      const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+      const { db } = await import('../../firebase');
       
-      if (response.data.success) {
-        setBusinesses(response.data.businesses);
-        
-        // 첫 번째 업장을 기본 선택
-        if (response.data.businesses.length > 0 && !selectedBusiness) {
-          setSelectedBusiness(response.data.businesses[0]);
-          setBusinessName(response.data.businesses[0].name);
-        }
-      } else {
-        throw new Error('업장 목록을 불러올 수 없습니다.');
+      const businessesQuery = query(
+        collection(db, 'businesses'),
+        where('owner_id', '==', currentUser.uid),
+        orderBy('created_at', 'desc')
+      );
+      
+      const businessesSnapshot = await getDocs(businessesQuery);
+      const businessesList = [];
+      
+      businessesSnapshot.forEach((doc) => {
+        businessesList.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      setBusinesses(businessesList);
+      
+      // 첫 번째 업장을 기본 선택
+      if (businessesList.length > 0 && !selectedBusiness) {
+        setSelectedBusiness(businessesList[0]);
+        setBusinessName(businessesList[0].name);
       }
     } catch (error) {
       console.error('업장 목록 불러오기 에러:', error);
@@ -188,6 +201,33 @@ const BusinessDashboard = () => {
       fetchBusinesses();
     }
   }, [currentUser, navigate]);
+
+  // 업장 선택 이벤트 리스너
+  useEffect(() => {
+    const handleBusinessSelected = (event) => {
+      const { business } = event.detail;
+      console.log('업장 선택 이벤트 수신:', business);
+      handleBusinessSelect(business);
+    };
+
+    // 로컬 스토리지에서 선택된 업장 복원
+    const savedBusiness = localStorage.getItem('selectedBusiness');
+    if (savedBusiness) {
+      try {
+        const business = JSON.parse(savedBusiness);
+        console.log('저장된 업장 복원:', business);
+        handleBusinessSelect(business);
+      } catch (error) {
+        console.error('저장된 업장 복원 실패:', error);
+      }
+    }
+
+    window.addEventListener('businessSelected', handleBusinessSelected);
+    
+    return () => {
+      window.removeEventListener('businessSelected', handleBusinessSelected);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -212,6 +252,11 @@ const BusinessDashboard = () => {
     setSelectedBusiness(business);
     setBusinessName(business.name);
     setIsBusinessSelectOpen(false);
+    
+    // 로컬 스토리지에 선택된 업장 저장
+    localStorage.setItem('selectedBusiness', JSON.stringify(business));
+    
+    console.log('업장 선택됨:', business);
   };
 
   const handleScheduleSettingsSave = async () => {
