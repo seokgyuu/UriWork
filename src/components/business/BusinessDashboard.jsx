@@ -9,7 +9,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { scheduleAPI } from '../../services/api';
+import { scheduleAPI, businessManagementAPI } from '../../services/api';
 import { 
   Settings,
   LogOut,
@@ -19,7 +19,8 @@ import {
   Briefcase,
   Users,
   Menu,
-  X
+  X,
+  Building
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -30,6 +31,7 @@ const ScheduleManagement = lazy(() => import('./ScheduleManagement'));
 const CategoriesManagement = lazy(() => import('./CategoriesManagement'));
 const Overview = lazy(() => import('./Overview'));
 const SettingsComponent = lazy(() => import('./Settings'));
+const BusinessManagement = lazy(() => import('./BusinessManagement'));
 
 // 로딩 컴포넌트
 const LoadingSpinner = () => (
@@ -63,6 +65,9 @@ const BusinessDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [businessName, setBusinessName] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [businesses, setBusinesses] = useState([]);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [isBusinessSelectOpen, setIsBusinessSelectOpen] = useState(false);
 
   // 메뉴 외부 클릭 시 메뉴 닫기
   useEffect(() => {
@@ -70,16 +75,20 @@ const BusinessDashboard = () => {
       if (isMenuOpen && !event.target.closest('.relative')) {
         setIsMenuOpen(false);
       }
+      if (isBusinessSelectOpen && !event.target.closest('.business-select-container')) {
+        setIsBusinessSelectOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMenuOpen]);
+  }, [isMenuOpen, isBusinessSelectOpen]);
 
   const tabs = [
     { id: 'overview', name: '개요', icon: 'Calendar' },
+    { id: 'businesses', name: '업장 관리', icon: 'Building' },
     { id: 'schedule', name: '스케줄 관리', icon: 'Calendar' },
     { id: 'ai-schedule', name: 'AI 스케줄 생성', icon: 'Brain' },
     { id: 'categories', name: '파트 관리', icon: 'Briefcase' },
@@ -145,41 +154,38 @@ const BusinessDashboard = () => {
     }
   };
 
+  // Firebase에서 업장 목록 불러오기
+  const fetchBusinesses = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const response = await businessManagementAPI.getBusinesses();
+      
+      if (response.data.success) {
+        setBusinesses(response.data.businesses);
+        
+        // 첫 번째 업장을 기본 선택
+        if (response.data.businesses.length > 0 && !selectedBusiness) {
+          setSelectedBusiness(response.data.businesses[0]);
+          setBusinessName(response.data.businesses[0].name);
+        }
+      } else {
+        throw new Error('업장 목록을 불러올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('업장 목록 불러오기 에러:', error);
+      // 에러가 발생해도 기본 업장명 설정
+      setBusinessName(currentUser?.displayName || (currentUser?.email ? currentUser.email.split('@')[0] : '업체'));
+    }
+  };
+
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
     } else {
       fetchDepartments();
       fetchWorkTasks();
-      // 업체 이름 로드
-      (async () => {
-        try {
-          // 로컬 저장소 우선 시도
-          let nameFromStorage = '';
-          try {
-            nameFromStorage = localStorage.getItem(`business_name_${currentUser.uid}`) || '';
-          } catch (_) {}
-
-          if (nameFromStorage) {
-            setBusinessName(nameFromStorage);
-            return;
-          }
-
-          const { doc, getDoc } = await import('firebase/firestore');
-          const { db } = await import('../../firebase');
-          const userSnap = await getDoc(doc(db, 'users', currentUser.uid));
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            setBusinessName(
-              data?.name || data?.business_name || currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '업체')
-            );
-          } else {
-            setBusinessName(currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : '업체'));
-          }
-        } catch (e) {
-          setBusinessName(currentUser?.displayName || (currentUser?.email ? currentUser.email.split('@')[0] : '업체'));
-        }
-      })();
+      fetchBusinesses();
     }
   }, [currentUser, navigate]);
 
@@ -199,6 +205,13 @@ const BusinessDashboard = () => {
 
   const handleProfileClick = () => {
     navigate('/user-profile');
+  };
+
+  // 업장 선택 핸들러
+  const handleBusinessSelect = (business) => {
+    setSelectedBusiness(business);
+    setBusinessName(business.name);
+    setIsBusinessSelectOpen(false);
   };
 
   const handleScheduleSettingsSave = async () => {
@@ -263,6 +276,12 @@ const BusinessDashboard = () => {
             />
           </Suspense>
         );
+      case 'businesses':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <BusinessManagement />
+          </Suspense>
+        );
       case 'schedule':
         return (
           <Suspense fallback={<LoadingSpinner />}>
@@ -312,7 +331,61 @@ const BusinessDashboard = () => {
       <header className="bg-white shadow header-mobile">
         <div className="w-full px-3 sm:px-4 pt-4 sm:pt-6">
           <div className="flex justify-between items-center py-4 sm:py-8">
-            <h1 className="text-lg sm:text-3xl font-bold text-gray-900 text-responsive-xl">{businessName || '업체'}</h1>
+            <div className="flex items-center space-x-4">
+              {/* 업장 선택 드롭다운 */}
+              {businesses.length > 0 && (
+                <div className="business-select-container relative">
+                  <button
+                    onClick={() => setIsBusinessSelectOpen(!isBusinessSelectOpen)}
+                    className="flex items-center space-x-2 text-lg sm:text-3xl font-bold text-gray-900 text-responsive-xl hover:text-blue-600 transition-colors"
+                  >
+                    <span className="truncate max-w-[200px]">{businessName || '업체'}</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {isBusinessSelectOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                      <div className="py-1">
+                        {businesses.map((business) => (
+                          <button
+                            key={business.id}
+                            onClick={() => handleBusinessSelect(business)}
+                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+                              selectedBusiness?.id === business.id ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                            }`}
+                          >
+                            <div className="font-medium">{business.name}</div>
+                            {business.business_type && (
+                              <div className="text-xs text-gray-500">{business.business_type}</div>
+                            )}
+                          </button>
+                        ))}
+                        <div className="border-t border-gray-200 mt-1 pt-1">
+                          <button
+                            onClick={() => {
+                              setActiveTab('businesses');
+                              setIsBusinessSelectOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                          >
+                            <Building className="h-4 w-4 inline mr-2" />
+                            업장 관리
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* 업장이 없는 경우 기본 제목 */}
+              {businesses.length === 0 && (
+                <h1 className="text-lg sm:text-3xl font-bold text-gray-900 text-responsive-xl">{businessName || '업체'}</h1>
+              )}
+            </div>
+            
             <div className="flex items-center space-x-2">
               <span className="hidden sm:block text-xs sm:text-sm text-gray-600 text-responsive-xs">안녕하세요, {currentUser?.displayName || '사장님'}!</span>
               
@@ -394,6 +467,9 @@ const BusinessDashboard = () => {
                   break;
                 case 'Users':
                   IconComponent = Users;
+                  break;
+                case 'Building':
+                  IconComponent = Building;
                   break;
                 default:
                   IconComponent = Calendar;

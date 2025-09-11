@@ -195,4 +195,22 @@ export const openaiAPI = {
   test: (message) => api.post('/test/openai', message),
 };
 
+// 업장 관리 API
+export const businessManagementAPI = {
+  // 업장 생성
+  createBusiness: (businessData) => api.post('/businesses/create', businessData),
+  
+  // 업장 목록 조회
+  getBusinesses: () => api.get('/businesses'),
+  
+  // 특정 업장 조회
+  getBusiness: (businessId) => api.get(`/businesses/${businessId}`),
+  
+  // 업장 정보 수정
+  updateBusiness: (businessId, updateData) => api.put(`/businesses/${businessId}`, updateData),
+  
+  // 업장 삭제
+  deleteBusiness: (businessId) => api.delete(`/businesses/${businessId}`)
+};
+
 export default api; 

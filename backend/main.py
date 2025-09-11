@@ -226,6 +226,19 @@ class DepartmentStaffing(BaseModel):
     work_hours: dict  # {"월": ["09:00-18:00"], "화": ["09:00-18:00"], ...}
     priority_level: int = 3  # 1-5 우선순위
 
+class Business(BaseModel):
+    name: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    description: Optional[str] = None
+    business_type: Optional[str] = None
+    operating_hours: Optional[dict] = None
+    owner_id: str
+    is_active: bool = True
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
 class AIScheduleRequest(BaseModel):
     business_id: str
     week_start_date: str
@@ -3680,6 +3693,180 @@ async def edit_schedule_with_ai(edit_request: dict, current_user: dict = Depends
         print(f"스케줄 수정 중 오류 발생: {str(e)}")
         raise HTTPException(status_code=500, detail=f"스케줄 수정 중 오류가 발생했습니다: {str(e)}")
 
+
+# ==================== 업장 관리 API ====================
+
+@app.post("/businesses/create")
+async def create_business(business: Business, current_user: dict = Depends(get_current_user)):
+    """새 업장 생성"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="데이터베이스 연결 실패")
+        
+        # 업장 데이터 준비
+        business_data = business.dict()
+        business_data["created_at"] = datetime.now().isoformat()
+        business_data["updated_at"] = datetime.now().isoformat()
+        business_data["owner_id"] = current_user["uid"]
+        
+        # Firestore에 업장 생성
+        doc_ref = db.collection("businesses").add(business_data)
+        business_id = doc_ref[1].id
+        
+        print(f"업장 생성 완료: {business_id}")
+        
+        return {
+            "success": True,
+            "message": "업장이 성공적으로 생성되었습니다",
+            "business_id": business_id,
+            "business": {**business_data, "id": business_id}
+        }
+        
+    except Exception as e:
+        print(f"업장 생성 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"업장 생성 중 오류가 발생했습니다: {str(e)}")
+
+
+@app.get("/businesses")
+async def get_businesses(current_user: dict = Depends(get_current_user)):
+    """사용자의 업장 목록 조회"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="데이터베이스 연결 실패")
+        
+        # 사용자의 업장 목록 조회
+        businesses_query = db.collection("businesses").where("owner_id", "==", current_user["uid"]).order_by("created_at", direction=firestore.Query.DESCENDING)
+        businesses_docs = businesses_query.stream()
+        
+        businesses = []
+        for doc in businesses_docs:
+            business_data = doc.to_dict()
+            business_data["id"] = doc.id
+            businesses.append(business_data)
+        
+        print(f"업장 목록 조회 완료: {len(businesses)}개")
+        
+        return {
+            "success": True,
+            "businesses": businesses
+        }
+        
+    except Exception as e:
+        print(f"업장 목록 조회 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"업장 목록 조회 중 오류가 발생했습니다: {str(e)}")
+
+
+@app.get("/businesses/{business_id}")
+async def get_business(business_id: str, current_user: dict = Depends(get_current_user)):
+    """특정 업장 조회"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="데이터베이스 연결 실패")
+        
+        # 업장 조회
+        business_doc = db.collection("businesses").document(business_id).get()
+        
+        if not business_doc.exists:
+            raise HTTPException(status_code=404, detail="업장을 찾을 수 없습니다")
+        
+        business_data = business_doc.to_dict()
+        
+        # 소유자 확인
+        if business_data.get("owner_id") != current_user["uid"]:
+            raise HTTPException(status_code=403, detail="이 업장에 접근할 권한이 없습니다")
+        
+        business_data["id"] = business_doc.id
+        
+        return {
+            "success": True,
+            "business": business_data
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"업장 조회 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"업장 조회 중 오류가 발생했습니다: {str(e)}")
+
+
+@app.put("/businesses/{business_id}")
+async def update_business(business_id: str, business_update: dict, current_user: dict = Depends(get_current_user)):
+    """업장 정보 수정"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="데이터베이스 연결 실패")
+        
+        # 업장 존재 확인
+        business_doc = db.collection("businesses").document(business_id).get()
+        
+        if not business_doc.exists:
+            raise HTTPException(status_code=404, detail="업장을 찾을 수 없습니다")
+        
+        business_data = business_doc.to_dict()
+        
+        # 소유자 확인
+        if business_data.get("owner_id") != current_user["uid"]:
+            raise HTTPException(status_code=403, detail="이 업장을 수정할 권한이 없습니다")
+        
+        # 업장 정보 업데이트
+        business_update["updated_at"] = datetime.now().isoformat()
+        
+        db.collection("businesses").document(business_id).update(business_update)
+        
+        # 업데이트된 업장 정보 조회
+        updated_doc = db.collection("businesses").document(business_id).get()
+        updated_business = updated_doc.to_dict()
+        updated_business["id"] = business_id
+        
+        print(f"업장 수정 완료: {business_id}")
+        
+        return {
+            "success": True,
+            "message": "업장 정보가 성공적으로 수정되었습니다",
+            "business": updated_business
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"업장 수정 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"업장 수정 중 오류가 발생했습니다: {str(e)}")
+
+
+@app.delete("/businesses/{business_id}")
+async def delete_business(business_id: str, current_user: dict = Depends(get_current_user)):
+    """업장 삭제"""
+    try:
+        if not db:
+            raise HTTPException(status_code=500, detail="데이터베이스 연결 실패")
+        
+        # 업장 존재 확인
+        business_doc = db.collection("businesses").document(business_id).get()
+        
+        if not business_doc.exists:
+            raise HTTPException(status_code=404, detail="업장을 찾을 수 없습니다")
+        
+        business_data = business_doc.to_dict()
+        
+        # 소유자 확인
+        if business_data.get("owner_id") != current_user["uid"]:
+            raise HTTPException(status_code=403, detail="이 업장을 삭제할 권한이 없습니다")
+        
+        # 업장 삭제
+        db.collection("businesses").document(business_id).delete()
+        
+        print(f"업장 삭제 완료: {business_id}")
+        
+        return {
+            "success": True,
+            "message": "업장이 성공적으로 삭제되었습니다"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"업장 삭제 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"업장 삭제 중 오류가 발생했습니다: {str(e)}")
 
 
 if __name__ == "__main__":
