@@ -1650,12 +1650,12 @@ const EmployerScheduleGenerator = () => {
       {/* 스케줄 생성 탭 */}
       {activeTab === 'generate' && (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white p-6 rounded-lg shadow-sm border overflow-hidden">
             <h2 className="text-xl font-semibold mb-4">AI 스케줄 생성</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
                   주 시작일
                   <span className="text-red-500 ml-1">*</span>
                 </label>
@@ -1667,14 +1667,14 @@ const EmployerScheduleGenerator = () => {
                     ...scheduleRequest,
                     week_start_date: e.target.value
                   })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                     scheduleRequest.week_start_date && isPastDate(scheduleRequest.week_start_date)
                       ? 'border-red-500 bg-red-50'
                       : 'border-gray-300'
                   }`}
                 />
                 {scheduleRequest.week_start_date && (
-                  <div className="mt-1">
+                  <div className="mt-2">
                     {isPastDate(scheduleRequest.week_start_date) ? (
                       <p className="text-xs text-red-500 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
@@ -1693,12 +1693,12 @@ const EmployerScheduleGenerator = () => {
                     )}
                   </div>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-2">
                   과거 날짜는 선택할 수 없습니다. 오늘 또는 미래 날짜를 선택해주세요.
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
                   주 마감일
                   <span className="text-red-500 ml-1">*</span>
                 </label>
@@ -1710,7 +1710,7 @@ const EmployerScheduleGenerator = () => {
                     ...scheduleRequest,
                     week_end_date: e.target.value
                   })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                     scheduleRequest.week_end_date && (
                       isPastDate(scheduleRequest.week_end_date) || 
                       (scheduleRequest.week_start_date && new Date(scheduleRequest.week_end_date) <= new Date(scheduleRequest.week_start_date))
@@ -1720,7 +1720,7 @@ const EmployerScheduleGenerator = () => {
                   }`}
                 />
                 {scheduleRequest.week_end_date && (
-                  <div className="mt-1">
+                  <div className="mt-2">
                     {isPastDate(scheduleRequest.week_end_date) ? (
                       <p className="text-xs text-red-500 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
@@ -1739,7 +1739,7 @@ const EmployerScheduleGenerator = () => {
                     )}
                   </div>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-2">
                   시작일 이후의 날짜를 선택해주세요.
                 </p>
               </div>
