@@ -1,6 +1,11 @@
-# 캘린더 예약 시스템
+# UriWork 고객 지원
+
+<meta http-equiv="refresh" content="0; url=./docs/">
+<script>window.location.href = './docs/';</script>
 
 AI 기반 스케줄 생성과 예약 관리 시스템입니다. 고용자와 직원 모두를 위한 통합 플랫폼으로, 직원 선호도를 고려한 최적의 스케줄을 자동으로 생성합니다.
+
+**지원 페이지로 이동 중...** [지원 페이지 바로가기](./docs/)
 
 ## 주요 기능
 
