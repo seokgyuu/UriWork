@@ -264,116 +264,211 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 네이티브 Google 로그인 처리 (이전 방식으로 복원)
+  // 네이티브 Google 로그인 처리 (iOS/Android 구분)
   const handleNativeGoogleSignIn = async () => {
     try {
       console.log('⚡️  [log] - AuthContext: 네이티브 Google 로그인 시작...');
+      const platform = Capacitor.getPlatform();
+      console.log('⚡️  [log] - AuthContext: 현재 플랫폼:', platform);
       
-      // 이전에 잘 되던 방식: CapacitorWebView 사용
-      return new Promise((resolve, reject) => {
-        // 성공 콜백 등록
-        const handleSuccess = (event) => {
-        console.log('⚡️  [log] - AuthContext: 네이티브 Google 로그인 성공:', event.detail);
-        window.removeEventListener('googleSignInSuccess', handleSuccess);
-        window.removeEventListener('googleSignInError', handleError);
+      if (platform === 'ios') {
+        // iOS 네이티브 Google 로그인
+        return new Promise((resolve, reject) => {
+          // 성공 콜백 등록
+          const handleSuccess = (event) => {
+            console.log('⚡️  [log] - AuthContext: iOS 네이티브 Google 로그인 성공:', event.detail);
+            window.removeEventListener('googleSignInSuccess', handleSuccess);
+            window.removeEventListener('googleSignInError', handleError);
 
-        if (event.detail && event.detail.user) {
-          // Firebase Auth 상태 강제 업데이트
-          import('../firebase').then(({ auth }) => {
-            // Firebase Auth 상태를 강제로 새로고침
-            if (auth.currentUser) {
-              auth.currentUser.reload().then(() => {
-                const firebaseUser = auth.currentUser;
-                if (firebaseUser) {
-                  console.log('⚡️  [log] - AuthContext: Firebase Auth 사용자 상태 강제 업데이트:', firebaseUser.uid);
-                  // currentUser 상태를 즉시 업데이트
-                  setCurrentUser(firebaseUser);
+            if (event.detail && event.detail.user) {
+              // Firebase Auth 상태 강제 업데이트
+              import('../firebase').then(({ auth }) => {
+                if (auth.currentUser) {
+                  auth.currentUser.reload().then(() => {
+                    const firebaseUser = auth.currentUser;
+                    if (firebaseUser) {
+                      console.log('⚡️  [log] - AuthContext: Firebase Auth 사용자 상태 강제 업데이트:', firebaseUser.uid);
+                      setCurrentUser(firebaseUser);
+                    }
+                  }).catch((error) => {
+                    console.error('⚡️  [error] - AuthContext: Firebase Auth 상태 새로고침 실패:', error);
+                    resolve(event.detail.user);
+                  });
+                } else {
+                  console.log('⚡️  [log] - AuthContext: Firebase Auth currentUser가 없음, 사용자 정보만 전달');
+                  if (event.detail.firebase_user) {
+                    console.log('⚡️  [log] - AuthContext: Firebase 사용자 정보 직접 설정:', event.detail.firebase_user.uid);
+                    const mockFirebaseUser = {
+                      uid: event.detail.firebase_user.uid,
+                      email: event.detail.firebase_user.email,
+                      displayName: event.detail.firebase_user.displayName,
+                      photoURL: event.detail.firebase_user.photoURL,
+                      emailVerified: true,
+                      isAnonymous: false,
+                      providerData: [{
+                        providerId: 'google.com',
+                        uid: event.detail.firebase_user.uid,
+                        displayName: event.detail.firebase_user.displayName,
+                        email: event.detail.firebase_user.email,
+                        photoURL: event.detail.firebase_user.photoURL
+                      }]
+                    };
+                    setCurrentUser(mockFirebaseUser);
+                  }
+                  resolve(event.detail.user);
                 }
-              }).catch((error) => {
-                console.error('⚡️  [error] - AuthContext: Firebase Auth 상태 새로고침 실패:', error);
-                // 새로고침 실패해도 사용자 정보는 전달
+              }).catch(error => {
+                console.error('⚡️  [error] - AuthContext: Firebase import 실패:', error);
                 resolve(event.detail.user);
               });
             } else {
-              console.log('⚡️  [log] - AuthContext: Firebase Auth currentUser가 없음, 사용자 정보만 전달');
-              // Firebase Auth currentUser가 없어도 사용자 정보를 직접 설정
-              if (event.detail.firebase_user) {
-                console.log('⚡️  [log] - AuthContext: Firebase 사용자 정보 직접 설정:', event.detail.firebase_user.uid);
-                // Firebase 사용자 객체를 직접 생성하여 설정
-                const mockFirebaseUser = {
-                  uid: event.detail.firebase_user.uid,
-                  email: event.detail.firebase_user.email,
-                  displayName: event.detail.firebase_user.displayName,
-                  photoURL: event.detail.firebase_user.photoURL,
-                  emailVerified: true,
-                  isAnonymous: false,
-                  providerData: [{
-                    providerId: 'google.com',
-                    uid: event.detail.firebase_user.uid,
-                    displayName: event.detail.firebase_user.displayName,
-                    email: event.detail.firebase_user.email,
-                    photoURL: event.detail.firebase_user.photoURL
-                  }]
-                };
-                setCurrentUser(mockFirebaseUser);
+              reject(new Error('Google 로그인 결과에서 사용자 정보를 찾을 수 없습니다.'));
+            }
+          };
+          
+          // 에러 콜백 등록
+          const handleError = (event) => {
+            console.error('⚡️  [error] - AuthContext: iOS 네이티브 Google 로그인 실패:', event.detail);
+            window.removeEventListener('googleSignInSuccess', handleSuccess);
+            window.removeEventListener('googleSignInError', handleError);
+            reject(new Error(event.detail?.message || 'Google 로그인에 실패했습니다.'));
+          };
+          
+          // 이벤트 리스너 등록
+          const handleCapacitorMessage = (event) => {
+            const detail = event.detail;
+            if (detail && detail.type === 'GOOGLE_SIGN_IN_RESULT') {
+              if (detail.success) {
+                handleSuccess({ detail: detail });
+              } else {
+                handleError({ detail: detail });
               }
-              resolve(event.detail.user);
             }
-          }).catch(error => {
-            console.error('⚡️  [error] - AuthContext: Firebase import 실패:', error);
-            resolve(event.detail.user);
-          });
-          resolve(event.detail.user);
-        } else {
-          reject(new Error('Google 로그인 결과에서 사용자 정보를 찾을 수 없습니다.'));
-        }
-        };
-        
-        // 에러 콜백 등록
-        const handleError = (event) => {
-          console.error('⚡️  [error] - AuthContext: 네이티브 Google 로그인 실패:', event.detail);
-          window.removeEventListener('googleSignInSuccess', handleSuccess);
-          window.removeEventListener('googleSignInError', handleError);
-          reject(new Error(event.detail?.message || 'Google 로그인에 실패했습니다.'));
-        };
-        
-        // 이벤트 리스너 등록 (capacitorMessage 이벤트로 변경)
-        const handleCapacitorMessage = (event) => {
-          const detail = event.detail;
-          if (detail && detail.type === 'GOOGLE_SIGN_IN_RESULT') {
-            if (detail.success) {
-              handleSuccess({ detail: detail });
+          };
+          
+          window.addEventListener('capacitorMessage', handleCapacitorMessage);
+          
+          // 타임아웃 설정 (30초)
+          const timeout = setTimeout(() => {
+            window.removeEventListener('capacitorMessage', handleCapacitorMessage);
+            reject(new Error('Google 로그인 시간이 초과되었습니다.'));
+          }, 30000);
+          
+          // iOS GoogleSignInPlugin 사용
+          try {
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.GoogleSignInPlugin) {
+              window.webkit.messageHandlers.GoogleSignInPlugin.postMessage({
+                action: 'googleSignIn'
+              });
             } else {
-              handleError({ detail: detail });
+              clearTimeout(timeout);
+              window.removeEventListener('capacitorMessage', handleCapacitorMessage);
+              reject(new Error('iOS 네이티브 Google 로그인을 사용할 수 없습니다.'));
             }
-          }
-        };
-        
-        window.addEventListener('capacitorMessage', handleCapacitorMessage);
-        
-        // 타임아웃 설정 (30초)
-        const timeout = setTimeout(() => {
-          window.removeEventListener('capacitorMessage', handleCapacitorMessage);
-          reject(new Error('Google 로그인 시간이 초과되었습니다.'));
-        }, 30000);
-        
-        // GoogleSignInPlugin 사용
-        try {
-          if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.GoogleSignInPlugin) {
-            window.webkit.messageHandlers.GoogleSignInPlugin.postMessage({
-              action: 'googleSignIn'
-            });
-          } else {
+          } catch (error) {
             clearTimeout(timeout);
             window.removeEventListener('capacitorMessage', handleCapacitorMessage);
-            reject(new Error('네이티브 Google 로그인을 사용할 수 없습니다.'));
+            reject(error);
           }
-        } catch (error) {
-          clearTimeout(timeout);
-          window.removeEventListener('capacitorMessage', handleCapacitorMessage);
-          reject(error);
-        }
-      });
+        });
+        
+      } else if (platform === 'android') {
+        // Android 네이티브 Google 로그인
+        console.log('⚡️  [log] - AuthContext: Android 플랫폼 감지, 네이티브 Google 로그인 사용');
+        
+        return new Promise((resolve, reject) => {
+          // 성공 콜백 등록
+          const handleSuccess = (event) => {
+            console.log('⚡️  [log] - AuthContext: Android 네이티브 Google 로그인 성공:', event.detail);
+            window.removeEventListener('googleSignInSuccess', handleSuccess);
+            window.removeEventListener('googleSignInError', handleError);
+
+            if (event.detail && event.detail.user) {
+              // Firebase Auth 상태 강제 업데이트
+              import('../firebase').then(({ auth }) => {
+                if (auth.currentUser) {
+                  auth.currentUser.reload().then(() => {
+                    const firebaseUser = auth.currentUser;
+                    if (firebaseUser) {
+                      console.log('⚡️  [log] - AuthContext: Firebase Auth 사용자 상태 강제 업데이트:', firebaseUser.uid);
+                      setCurrentUser(firebaseUser);
+                    }
+                  }).catch((error) => {
+                    console.error('⚡️  [error] - AuthContext: Firebase Auth 상태 새로고침 실패:', error);
+                    resolve(event.detail.user);
+                  });
+                } else {
+                  console.log('⚡️  [log] - AuthContext: Firebase Auth currentUser가 없음, 사용자 정보만 전달');
+                  if (event.detail.user) {
+                    console.log('⚡️  [log] - AuthContext: Firebase 사용자 정보 직접 설정:', event.detail.user.uid);
+                    const mockFirebaseUser = {
+                      uid: event.detail.user.uid,
+                      email: event.detail.user.email,
+                      displayName: event.detail.user.displayName,
+                      photoURL: event.detail.user.photoURL,
+                      emailVerified: true,
+                      isAnonymous: false,
+                      providerData: [{
+                        providerId: 'google.com',
+                        uid: event.detail.user.uid,
+                        displayName: event.detail.user.displayName,
+                        email: event.detail.user.email,
+                        photoURL: event.detail.user.photoURL
+                      }]
+                    };
+                    setCurrentUser(mockFirebaseUser);
+                  }
+                  resolve(event.detail.user);
+                }
+              }).catch(error => {
+                console.error('⚡️  [error] - AuthContext: Firebase import 실패:', error);
+                resolve(event.detail.user);
+              });
+            } else {
+              reject(new Error('Google 로그인 결과에서 사용자 정보를 찾을 수 없습니다.'));
+            }
+          };
+          
+          // 에러 콜백 등록
+          const handleError = (event) => {
+            console.error('⚡️  [error] - AuthContext: Android 네이티브 Google 로그인 실패:', event.detail);
+            window.removeEventListener('googleSignInSuccess', handleSuccess);
+            window.removeEventListener('googleSignInError', handleError);
+            reject(new Error(event.detail?.message || 'Google 로그인에 실패했습니다.'));
+          };
+          
+          // 이벤트 리스너 등록
+          window.addEventListener('googleSignInSuccess', handleSuccess);
+          window.addEventListener('googleSignInError', handleError);
+          
+          // 타임아웃 설정 (30초)
+          const timeout = setTimeout(() => {
+            window.removeEventListener('googleSignInSuccess', handleSuccess);
+            window.removeEventListener('googleSignInError', handleError);
+            reject(new Error('Google 로그인 시간이 초과되었습니다.'));
+          }, 30000);
+          
+          // Android 네이티브 Google 로그인 시작
+          try {
+            if (window.GoogleSignInPlugin && window.GoogleSignInPlugin.googleSignIn) {
+              window.GoogleSignInPlugin.googleSignIn();
+            } else {
+              clearTimeout(timeout);
+              window.removeEventListener('googleSignInSuccess', handleSuccess);
+              window.removeEventListener('googleSignInError', handleError);
+              reject(new Error('Android 네이티브 Google 로그인을 사용할 수 없습니다.'));
+            }
+          } catch (error) {
+            clearTimeout(timeout);
+            window.removeEventListener('googleSignInSuccess', handleSuccess);
+            window.removeEventListener('googleSignInError', handleError);
+            reject(error);
+          }
+        });
+        
+      } else {
+        throw new Error('지원하지 않는 플랫폼입니다.');
+      }
       
     } catch (error) {
       console.error('⚡️  [error] - AuthContext: 네이티브 Google 로그인 처리 실패:', error);

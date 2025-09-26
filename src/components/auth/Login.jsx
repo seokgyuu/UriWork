@@ -508,20 +508,22 @@ const Login = () => {
                 )}
               </div>
 
-              {/* Apple 로그인 버튼 */}
-              <div className="w-full mt-2 sm:mt-3">
-                <button
-                  type="button"
-                  onClick={handleAppleLogin}
-                  disabled={appleLoading || currentUser}
-                  className="w-full flex justify-center items-center px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 btn-mobile touch-target text-responsive-sm"
-                >
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M16.365 1.43c0 1.14-.42 2.085-1.26 2.835-.915.825-1.935 1.29-3.06 1.2-.06-1.11.45-2.085 1.29-2.895.885-.87 2.025-1.41 3.03-1.14zM21.165 17.255c-.57 1.365-1.26 2.58-2.055 3.63-1.08 1.425-2.13 2.865-3.855 2.895-1.65.03-2.175-.945-4.05-.945-1.875 0-2.445.915-4.05.975-1.68.06-2.88-1.53-3.96-2.94-2.145-2.79-3.78-7.905-1.575-11.37 1.095-1.77 3.045-2.895 5.145-2.925 1.62-.03 3.15 1.035 4.05 1.035.9 0 2.775-1.275 4.68-1.095.795.03 3.045.315 4.485 2.37-3.78 2.07-3.165 7.485.285 8.565z" />
-                  </svg>
-                  {appleLoading ? 'Apple 로그인 중...' : currentUser ? '로그인 완료, 이동 중...' : 'Apple로 로그인'}
-                </button>
-              </div>
+              {/* Apple 로그인 버튼 - iOS에서만 표시 */}
+              {platform === 'ios' && (
+                <div className="w-full mt-2 sm:mt-3">
+                  <button
+                    type="button"
+                    onClick={handleAppleLogin}
+                    disabled={appleLoading || currentUser}
+                    className="w-full flex justify-center items-center px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 btn-mobile touch-target text-responsive-sm"
+                  >
+                    <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M16.365 1.43c0 1.14-.42 2.085-1.26 2.835-.915.825-1.935 1.29-3.06 1.2-.06-1.11.45-2.085 1.29-2.895.885-.87 2.025-1.41 3.03-1.14zM21.165 17.255c-.57 1.365-1.26 2.58-2.055 3.63-1.08 1.425-2.13 2.865-3.855 2.895-1.65.03-2.175-.945-4.05-.945-1.875 0-2.445.915-4.05.975-1.68.06-2.88-1.53-3.96-2.94-2.145-2.79-3.78-7.905-1.575-11.37 1.095-1.77 3.045-2.895 5.145-2.925 1.62-.03 3.15 1.035 4.05 1.035.9 0 2.775-1.275 4.68-1.095.795.03 3.045.315 4.485 2.37-3.78 2.07-3.165 7.485.285 8.565z" />
+                    </svg>
+                    {appleLoading ? 'Apple 로그인 중...' : currentUser ? '로그인 완료, 이동 중...' : 'Apple로 로그인'}
+                  </button>
+                </div>
+              )}
               
               {/* 로그인 상태 표시 */}
               {currentUser && (
