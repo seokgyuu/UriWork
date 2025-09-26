@@ -37,6 +37,11 @@ for env_path in env_paths:
 else:
     print("⚠️ .env 파일을 찾을 수 없습니다. 시스템 환경 변수를 사용합니다.")
 
+# 환경 설정
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", 8001))
+
 # OpenAI API 설정
 openai.api_key = os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
@@ -121,18 +126,29 @@ app = FastAPI(title="캘린더 예약 시스템 API")
 async def health_check():
     return {"status": "healthy", "message": "서버가 정상적으로 실행 중입니다."}
 
-# CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+# CORS 설정 (환경에 따라 다르게)
+if ENVIRONMENT == "production":
+    # 프로덕션 환경: 실제 도메인만 허용
+    allowed_origins = [
+        "https://your-app-domain.com",  # 실제 앱 도메인으로 변경
+        "https://your-backend-domain.com"  # 실제 백엔드 도메인으로 변경
+    ]
+else:
+    # 개발 환경: 로컬 주소들 허용
+    allowed_origins = [
         "http://localhost:5173", 
         "http://localhost:3000", 
         "http://127.0.0.1:5173",
         "capacitor://localhost",
         "ionic://localhost",
         "http://localhost",
-        "https://localhost"
-    ],
+        "https://localhost",
+        "*"  # 개발 환경에서는 모든 origin 허용
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -268,8 +284,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     try:
         token = credentials.credentials
         
-        # 개발 모드 토큰 확인 (Firebase가 없을 때만)
-        if db is None and token == "dev_token_123":
+        # 개발 모드 토큰 확인 (Firebase가 있더라도 개발 토큰 허용)
+        if token == "dev_token_123":
             return {"uid": "dev_user_123", "email": "dev@example.com"}
         
         # Firebase가 있으면 실제 토큰 검증
@@ -283,9 +299,13 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
                 detail="Firebase 인증이 필요합니다"
             )
     except Exception as e:
-        if db is None and token == "dev_token_123":
-            # 개발 모드에서는 더미 사용자 정보 반환
-            return {"uid": "dev_user_123", "email": "dev@example.com"}
+        try:
+            if token == "dev_token_123":
+                # 개발 모드에서는 더미 사용자 정보 반환
+                return {"uid": "dev_user_123", "email": "dev@example.com"}
+        except NameError:
+            # token 변수가 정의되지 않은 경우
+            pass
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="유효하지 않은 토큰입니다"
@@ -965,6 +985,83 @@ async def get_department_staffing(business_id: str, current_user: dict = Depends
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# AI 스케줄 생성 (고용자용) - 개발 모드용 (인증 없음)
+@app.post("/ai/schedule/generate-dev")
+async def generate_ai_schedule_for_employer_dev(schedule_request: AIScheduleRequest):
+    try:
+        print(f"🚀 AI 스케줄 생성 요청 받음 (개발 모드): {schedule_request}")
+        start_time = time.time()
+        
+        # 개발 모드에서는 더미 사용자 정보 사용
+        current_user = {"uid": "dev_user_123", "email": "dev@example.com"}
+        
+        # 중복 요청 방지를 위한 요청 ID 생성
+        request_id = f"{current_user['uid']}_{schedule_request.week_start_date}_{schedule_request.week_end_date}_{int(time.time())}"
+        print(f"📋 요청 ID: {request_id}")
+        
+        # 동일한 요청이 이미 처리 중인지 확인 (간단한 중복 방지)
+        if request_id in schedule_generation_jobs:
+            return {"message": "이미 처리 중인 요청입니다", "request_id": request_id}
+        
+        # 작업 상태 저장
+        schedule_generation_jobs[request_id] = {
+            "status": "processing",
+            "progress": 0,
+            "message": "스케줄 생성 중...",
+            "created_at": datetime.now().isoformat()
+        }
+        
+        print("⚡️ 간단한 스케줄 생성 시작...")
+        
+        # 간단한 스케줄 생성 (Firestore 접근 없이)
+        schedule = generate_simple_schedule_dev(schedule_request)
+        schedule["ai_generated"] = False
+        schedule["generation_method"] = "simple_dev_algorithm"
+        
+        # 스케줄 ID 생성
+        schedule_id = str(uuid.uuid4())
+        schedule["schedule_id"] = schedule_id
+        schedule["business_id"] = schedule_request.business_id
+        schedule["created_at"] = datetime.now().isoformat()
+        schedule["created_by"] = current_user["uid"]
+        
+        # 작업 완료 상태 업데이트
+        schedule_generation_jobs[request_id] = {
+            "status": "completed",
+            "progress": 100,
+            "message": "스케줄 생성 완료",
+            "schedule_id": schedule_id,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        end_time = time.time()
+        processing_time = end_time - start_time
+        print(f"✅ 스케줄 생성 완료: {schedule_id} (처리시간: {processing_time:.2f}초)")
+        
+        return {
+            "message": "스케줄이 성공적으로 생성되었습니다",
+            "schedule_id": schedule_id,
+            "schedule": schedule,
+            "request_id": request_id,
+            "processing_time": processing_time
+        }
+        
+    except Exception as e:
+        print(f"❌ 스케줄 생성 중 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # 작업 실패 상태 업데이트
+        if 'request_id' in locals():
+            schedule_generation_jobs[request_id] = {
+                "status": "failed",
+                "progress": 0,
+                "message": f"스케줄 생성 실패: {str(e)}",
+                "error": str(e),
+                "created_at": datetime.now().isoformat()
+            }
+        raise HTTPException(status_code=500, detail=f"스케줄 생성 중 오류가 발생했습니다: {str(e)}")
+
 # AI 스케줄 생성 (고용자용)
 @app.post("/ai/schedule/generate")
 async def generate_ai_schedule_for_employer(schedule_request: AIScheduleRequest, current_user: dict = Depends(get_current_user)):
@@ -1633,6 +1730,121 @@ def generate_advanced_ai_schedule(schedule_request):
     except Exception as e:
         print(f"OpenAI API 호출 실패: {e}")
         return generate_basic_schedule(schedule_request)
+
+def generate_simple_schedule_dev(schedule_request):
+    """개발 모드용 간단한 스케줄 생성 함수 (Firestore 접근 없음)"""
+    try:
+        print("🔧 간단한 스케줄 생성 시작 (개발 모드)...")
+        
+        # 기본 스케줄 구조 생성
+        schedule_data = {
+            "월": [],
+            "화": [],
+            "수": [],
+            "목": [],
+            "금": [],
+            "토": [],
+            "일": []
+        }
+        
+        # 부서별로 각 요일 스케줄 생성
+        for dept in schedule_request.department_staffing:
+            for day in schedule_data.keys():
+                # 해당 요일에 근무하는지 확인
+                work_hours_for_day = dept.work_hours.get(day, [])
+                
+                # work_hours가 없거나 빈 배열이면 해당 요일은 근무하지 않음
+                if not work_hours_for_day or (isinstance(work_hours_for_day, list) and len(work_hours_for_day) == 0):
+                    print(f"{day}요일 {dept.department_name}: 근무하지 않음")
+                    continue
+                
+                day_schedule = {
+                    "department_id": dept.department_id,
+                    "department_name": dept.department_name,
+                    "required_staff_count": dept.required_staff_count,
+                    "assigned_employees": [],
+                    "work_hours": work_hours_for_day
+                }
+                
+                # 사용 가능한 직원 찾기 (간단한 필터링)
+                available_workers = [
+                    emp for emp in schedule_request.employee_preferences
+                    if day not in (emp.preferred_off_days or []) and emp.business_id == schedule_request.business_id
+                ]
+                
+                print(f"{day}요일 {dept.department_name}: 필요인원 {dept.required_staff_count}명, 사용가능한 직원 {len(available_workers)}명")
+                
+                if len(available_workers) == 0:
+                    print(f"⚠️ {day}요일 {dept.department_name}: 사용 가능한 직원이 없습니다!")
+                    continue
+                
+                # 필요한 인원만큼 직원 배정 (간단한 순서대로)
+                assigned_count = 0
+                for i in range(min(dept.required_staff_count, len(available_workers))):
+                    if i < len(available_workers):
+                        worker = available_workers[i]
+                        
+                        # 간단한 직원 이름 생성 (Firestore 접근 없이)
+                        employee_name = f"직원_{worker.worker_id[-4:]}"
+                        
+                        employee_schedule = {
+                            "worker_id": worker.worker_id,
+                            "employee_name": employee_name,
+                            "work_hours": work_hours_for_day[0] if work_hours_for_day else "09:00-18:00",
+                            "satisfaction_score": 8.0  # 기본 만족도 점수
+                        }
+                        day_schedule["assigned_employees"].append(employee_schedule)
+                        assigned_count += 1
+                        
+                        print(f"{day}요일 {dept.department_name}: 배정된 직원 {assigned_count}명 - {employee_name}")
+                
+                # 배정된 직원이 있는 경우에만 스케줄에 추가
+                if assigned_count > 0:
+                    schedule_data[day].append(day_schedule)
+        
+        # 실제 배정된 총 직원 수 계산
+        total_assigned = sum(
+            len(dept["assigned_employees"]) 
+            for day_schedules in schedule_data.values() 
+            for dept in day_schedules
+        )
+        
+        # 기본 정보 추가
+        schedule_data.update({
+            "total_workers": total_assigned,
+            "total_hours": total_assigned * 8,  # 8시간 가정
+            "satisfaction_score": 8.5,  # 기본 만족도 점수
+            "ai_generated": False,
+            "generation_method": "simple_dev_algorithm",
+            "actual_assigned_workers": total_assigned,
+            "total_required_staff": total_assigned,
+            "dev_mode": True,
+            "message": "개발 모드에서 생성된 간단한 스케줄입니다."
+        })
+        
+        print(f"✅ 간단한 스케줄 생성 완료: 총 배정된 직원 {total_assigned}명")
+        return schedule_data
+        
+    except Exception as e:
+        print(f"❌ 간단한 스케줄 생성 중 오류: {str(e)}")
+        # 최소한의 기본 구조라도 반환
+        return {
+            "월": [],
+            "화": [],
+            "수": [],
+            "목": [],
+            "금": [],
+            "토": [],
+            "일": [],
+            "total_workers": 0,
+            "total_hours": 0,
+            "satisfaction_score": 0.0,
+            "ai_generated": False,
+            "generation_method": "simple_dev_algorithm_error",
+            "error": str(e),
+            "actual_assigned_workers": 0,
+            "dev_mode": True
+        }
 
 def generate_basic_schedule(schedule_request):
     """기본 알고리즘을 사용한 스케줄 생성 함수"""

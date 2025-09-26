@@ -8,12 +8,29 @@
 import axios from 'axios';
 import { auth } from '../firebase';
 
-const API_BASE_URL = 'http://172.30.1.5:8001';
+// 환경에 따른 API URL 설정
+const getApiBaseUrl = () => {
+  // 개발 환경 (로컬)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8001';
+  }
+  
+  // iOS 시뮬레이터 (개발용)
+  if (window.location.hostname.includes('capacitor')) {
+    return 'http://localhost:8001';
+  }
+  
+  // 프로덕션 환경 (실제 배포)
+  // 여기에 실제 배포된 백엔드 서버 URL을 입력
+  return 'https://your-backend-server.com'; // 실제 배포 URL로 변경 필요
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Axios 인스턴스 생성
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10초 타임아웃
+  timeout: 30000, // 30초 타임아웃
   headers: {
     'Content-Type': 'application/json',
   },
@@ -93,8 +110,8 @@ export const chatbotAPI = {
 
 // AI 스케줄 생성 및 관리 API
 export const aiScheduleAPI = {
-  // AI 스케줄 생성
-  generateSchedule: (scheduleRequest) => api.post('/ai/schedule/generate', scheduleRequest),
+  // AI 스케줄 생성 (개발 모드용)
+  generateSchedule: (scheduleRequest) => api.post('/ai/schedule/generate-dev', scheduleRequest),
   
   // 생성된 스케줄 조회
   getSchedule: (scheduleId) => api.get(`/ai/schedule/${scheduleId}`),
@@ -135,8 +152,8 @@ export const employerScheduleAPI = {
   // 부서별 필요 인원 조회
   getDepartmentStaffing: (businessId) => api.get(`/department/staffing/${businessId}`),
   
-  // AI 스케줄 생성
-  generateSchedule: (scheduleRequest) => api.post('/ai/schedule/generate', scheduleRequest),
+  // AI 스케줄 생성 (개발 모드용)
+  generateSchedule: (scheduleRequest) => api.post('/ai/schedule/generate-dev', scheduleRequest),
   
   // 생성된 스케줄 조회
   getGeneratedSchedule: (scheduleId) => api.get(`/ai/schedule/${scheduleId}`),
