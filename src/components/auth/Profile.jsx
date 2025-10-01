@@ -20,12 +20,14 @@ import {
   X,
   Copy,
   Key,
-  CheckCircle
+  CheckCircle,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
-  const { currentUser, logout, getUserData, updateUserData } = useAuth();
+  const { currentUser, logout, deleteAccount, getUserData, updateUserData } = useAuth();
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -37,6 +39,8 @@ const Profile = () => {
   });
   const [businessCode, setBusinessCode] = useState('');
   const [permissionStatus, setPermissionStatus] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -147,6 +151,48 @@ const Profile = () => {
       toast.error('로그아웃 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      setLoading(true);
+      await deleteAccount();
+      toast.success('계정이 성공적으로 삭제되었습니다.');
+      navigate('/login');
+    } catch (error) {
+      console.error('계정 삭제 에러:', error);
+      
+      let errorMessage = '계정 삭제 중 오류가 발생했습니다.';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.code) {
+        switch (error.code) {
+          case 'auth/requires-recent-login':
+            errorMessage = '보안을 위해 다시 로그인한 후 탈퇴해주세요.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
+            break;
+          default:
+            errorMessage = `계정 삭제 실패: ${error.code}`;
+        }
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+      setShowDeleteConfirm(false);
+      setDeleteConfirmText('');
+    }
+  };
+
+  const confirmDeleteAccount = () => {
+    if (deleteConfirmText === 'DELETE') {
+      handleDeleteAccount();
+    } else {
+      toast.error('정확히 "DELETE"를 입력해주세요.');
     }
   };
 
@@ -604,12 +650,19 @@ const Profile = () => {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-2 flex-wrap">
+              <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg gap-2 flex-wrap">
                 <div className="min-w-0">
-                  <h4 className="font-medium text-gray-900 text-responsive-sm sm:text-base">계정 삭제</h4>
-                  <p className="text-responsive-xs sm:text-sm text-gray-600">계정을 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.</p>
+                  <h4 className="font-medium text-red-900 text-responsive-sm sm:text-base flex items-center">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    계정 삭제
+                  </h4>
+                  <p className="text-responsive-xs sm:text-sm text-red-700">계정을 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.</p>
                 </div>
-                <button className="px-3 sm:px-4 py-2 text-red-600 hover:text-red-700 font-medium text-responsive-xs sm:text-sm">
+                <button 
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center px-3 sm:px-4 py-2 text-red-600 hover:text-red-700 font-medium text-responsive-xs sm:text-sm border border-red-300 rounded-md hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
                   삭제하기
                 </button>
               </div>
@@ -617,6 +670,71 @@ const Profile = () => {
           </div>
         </div>
       </main>
+
+      {/* 회원탈퇴 확인 모달 */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="h-6 w-6 text-red-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">계정 삭제 확인</h3>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-4">
+                정말로 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 다음 데이터가 영구적으로 삭제됩니다:
+              </p>
+              <ul className="text-sm text-gray-600 list-disc list-inside space-y-1 mb-4">
+                <li>프로필 정보</li>
+                <li>예약 및 스케줄 데이터</li>
+                <li>업체 정보 (업체 사용자의 경우)</li>
+                <li>권한 및 설정</li>
+              </ul>
+              <p className="text-sm text-gray-600 mb-4">
+                계속하려면 아래에 <strong>"DELETE"</strong>를 입력하세요:
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                autoFocus
+              />
+            </div>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteConfirmText('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                disabled={loading}
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmDeleteAccount}
+                disabled={loading || deleteConfirmText !== 'DELETE'}
+                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    삭제 중...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    계정 삭제
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

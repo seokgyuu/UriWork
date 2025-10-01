@@ -7,7 +7,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { signInWithPopup, GoogleAuthProvider, OAuthProvider, onAuthStateChanged, getRedirectResult, signInWithRedirect, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, collection, query, where } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where } from 'firebase/firestore';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
@@ -476,31 +476,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Google 로그인 - Firebase Auth 재초기화 방식
+  // Google 로그인 - 웹과 네이티브 모두 지원
   const loginWithGoogle = async () => {
     try {
-      console.log('⚡️  [log] - AuthContext: Google 로그인 시작 (Firebase Auth 재초기화 방식)...');
+      console.log('⚡️  [log] - AuthContext: Google 로그인 시작...');
       
-      // 네이티브 환경 확인 - iOS에서는 네이티브 Google 로그인 사용
+      // 네이티브 환경 확인
       if (Capacitor.isNativePlatform()) {
         console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 감지, 네이티브 Google 로그인 시도');
         return await handleNativeGoogleSignIn();
       }
       
+      // 웹 환경에서 Firebase Auth 사용
+      console.log('⚡️  [log] - AuthContext: 웹 플랫폼 감지, Firebase Auth 팝업 사용');
+      
       // Firebase Auth 모듈 import
-      console.log('⚡️  [log] - AuthContext: Firebase Auth 모듈 import...');
-      const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
-      
-      // Firebase 앱 import
-      const { getApp } = await import('firebase/app');
-      
-      // Firebase 앱 가져오기
-      const app = getApp();
-      console.log('⚡️  [log] - AuthContext: Firebase 앱 가져오기 완료');
-      
-      // 새로운 Auth 인스턴스 생성
-      const newAuth = getAuth(app);
-      console.log('⚡️  [log] - AuthContext: 새로운 Auth 인스턴스 생성 완료');
+      const { GoogleAuthProvider, signInWithPopup, signInWithRedirect } = await import('firebase/auth');
       
       // GoogleAuthProvider 생성
       const provider = new GoogleAuthProvider();
@@ -520,20 +511,17 @@ export const AuthProvider = ({ children }) => {
       console.log('⚡️  [log] - AuthContext: - scopes:', provider.scopes);
       
       // Firebase Auth 객체 검증
-      console.log('⚡️  [log] - AuthContext: 새로운 Firebase Auth 객체 검증...');
-      console.log('⚡️  [log] - AuthContext: - newAuth:', !!newAuth);
-      console.log('⚡️  [log] - AuthContext: - newAuth.app:', !!newAuth.app);
-      console.log('⚡️  [log] - AuthContext: - newAuth.app.options:', !!newAuth.app?.options);
-      console.log('⚡️  [log] - AuthContext: - newAuth.app.options.apiKey:', !!newAuth.app?.options?.apiKey);
-      console.log('⚡️  [log] - AuthContext: - newAuth.app.options.projectId:', !!newAuth.app?.options?.projectId);
+      console.log('⚡️  [log] - AuthContext: Firebase Auth 객체 검증...');
+      console.log('⚡️  [log] - AuthContext: - auth:', !!auth);
+      console.log('⚡️  [log] - AuthContext: - auth.app:', !!auth.app);
+      console.log('⚡️  [log] - AuthContext: - auth.app.options:', !!auth.app?.options);
+      console.log('⚡️  [log] - AuthContext: - auth.app.options.apiKey:', !!auth.app?.options?.apiKey);
+      console.log('⚡️  [log] - AuthContext: - auth.app.options.projectId:', !!auth.app?.options?.projectId);
       
       // signInWithPopup 실행
       console.log('⚡️  [log] - AuthContext: signInWithPopup 실행 중...');
-      console.log('⚡️  [log] - AuthContext: newAuth 타입:', typeof newAuth);
-      console.log('⚡️  [log] - AuthContext: provider 타입:', typeof provider);
-      console.log('⚡️  [log] - AuthContext: signInWithPopup 타입:', typeof signInWithPopup);
       
-      const result = await signInWithPopup(newAuth, provider);
+      const result = await signInWithPopup(auth, provider);
       
       console.log('⚡️  [log] - AuthContext: Google 로그인 성공!');
       console.log('⚡️  [log] - AuthContext: 사용자 정보:', {
@@ -563,11 +551,12 @@ export const AuthProvider = ({ children }) => {
       } else if (error.code === 'auth/popup-blocked') {
         console.log('⚡️  [log] - AuthContext: 팝업 차단됨 → 리다이렉트 시도');
         try {
-        const provider = new GoogleAuthProvider();
-        provider.addScope('email');
-        provider.addScope('profile');
-        await signInWithRedirect(auth, provider);
-        return;
+          const { GoogleAuthProvider, signInWithRedirect } = await import('firebase/auth');
+          const provider = new GoogleAuthProvider();
+          provider.addScope('email');
+          provider.addScope('profile');
+          await signInWithRedirect(auth, provider);
+          return;
         } catch (redirectError) {
           console.error('⚡️  [error] - AuthContext: 리다이렉트도 실패:', redirectError);
           throw new Error('Google 로그인에 실패했습니다. 팝업과 리다이렉트 모두 차단되었습니다.');
@@ -933,10 +922,109 @@ export const AuthProvider = ({ children }) => {
   // 로그아웃
   const logout = async () => {
     try {
-      await auth.signOut();
+      console.log('⚡️  [log] - AuthContext: 로그아웃 시작...');
+      
+      // 1. Firebase Auth 로그아웃
+      if (auth) {
+        await auth.signOut();
+        console.log('⚡️  [log] - AuthContext: Firebase Auth 로그아웃 완료');
+      }
+      
+      // 2. 로컬 상태 초기화
+      setCurrentUser(null);
+      console.log('⚡️  [log] - AuthContext: 로컬 상태 초기화 완료');
+      
+      // 3. 세션 스토리지 정리
+      try {
+        sessionStorage.clear();
+        console.log('⚡️  [log] - AuthContext: 세션 스토리지 정리 완료');
+      } catch (e) {
+        console.warn('⚡️  [warn] - AuthContext: 세션 스토리지 정리 실패:', e);
+      }
+      
+      // 4. 로컬 스토리지 정리 (인증 관련 데이터만)
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('firebase') || key.includes('auth') || key.includes('user'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log('⚡️  [log] - AuthContext: 로컬 스토리지 정리 완료');
+      } catch (e) {
+        console.warn('⚡️  [warn] - AuthContext: 로컬 스토리지 정리 실패:', e);
+      }
+      
+      // 5. 네이티브 플랫폼에서 추가 정리
+      if (Capacitor.isNativePlatform()) {
+        const platform = Capacitor.getPlatform();
+        console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 로그아웃 정리:', platform);
+        
+        if (platform === 'android') {
+          // Android에서 Google 로그인 상태 정리
+          try {
+            if (window.GoogleSignInPlugin && window.GoogleSignInPlugin.googleSignOut) {
+              // 네이티브 Google 로그아웃 사용
+              window.GoogleSignInPlugin.googleSignOut();
+              console.log('⚡️  [log] - AuthContext: Android 네이티브 Google 로그아웃 시작');
+              
+              // 로그아웃 완료 이벤트 대기
+              const handleSignOutSuccess = () => {
+                console.log('⚡️  [log] - AuthContext: Android 네이티브 Google 로그아웃 완료');
+                window.removeEventListener('googleSignOutSuccess', handleSignOutSuccess);
+              };
+              
+              window.addEventListener('googleSignOutSuccess', handleSignOutSuccess);
+              
+              // 타임아웃 설정 (5초)
+              setTimeout(() => {
+                window.removeEventListener('googleSignOutSuccess', handleSignOutSuccess);
+                console.log('⚡️  [log] - AuthContext: Android 네이티브 Google 로그아웃 타임아웃');
+              }, 5000);
+              
+            } else if (window.GoogleSignInPlugin && window.GoogleSignInPlugin.signOut) {
+              // 기존 방식도 시도
+              window.GoogleSignInPlugin.signOut();
+              console.log('⚡️  [log] - AuthContext: Android Google 로그인 상태 정리 완료 (기존 방식)');
+            }
+          } catch (e) {
+            console.warn('⚡️  [warn] - AuthContext: Android Google 로그인 상태 정리 실패:', e);
+          }
+        } else if (platform === 'ios') {
+          // iOS에서 Apple 로그인 상태 정리
+          try {
+            if (window.AppleSignInPlugin && window.AppleSignInPlugin.signOut) {
+              window.AppleSignInPlugin.signOut();
+              console.log('⚡️  [log] - AuthContext: iOS Apple 로그인 상태 정리 완료');
+            }
+          } catch (e) {
+            console.warn('⚡️  [warn] - AuthContext: iOS Apple 로그인 상태 정리 실패:', e);
+          }
+        }
+      }
+      
+      // 6. 강제로 인증 상태 리셋
+      setTimeout(() => {
+        setCurrentUser(null);
+        console.log('⚡️  [log] - AuthContext: 강제 인증 상태 리셋 완료');
+      }, 100);
+      
       console.log('⚡️  [log] - AuthContext: 로그아웃 완료');
+      
     } catch (error) {
       console.error('⚡️  [error] - AuthContext: 로그아웃 실패:', error);
+      
+      // 에러가 발생해도 로컬 상태는 강제로 초기화
+      setCurrentUser(null);
+      try {
+        sessionStorage.clear();
+        localStorage.clear();
+      } catch (e) {
+        console.warn('⚡️  [warn] - AuthContext: 강제 정리 중 에러:', e);
+      }
+      
       throw error;
     }
   };
@@ -1035,6 +1123,144 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 회원탈퇴
+  const deleteAccount = async () => {
+    try {
+      console.log('⚡️  [log] - AuthContext: 회원탈퇴 시작...');
+      
+      if (!currentUser) {
+        throw new Error('로그인된 사용자가 없습니다.');
+      }
+      
+      const uid = currentUser.uid;
+      console.log('⚡️  [log] - AuthContext: 탈퇴할 사용자 ID:', uid);
+      
+      // 1. Firestore에서 사용자 관련 데이터 삭제
+      try {
+        console.log('⚡️  [log] - AuthContext: Firestore 데이터 삭제 시작...');
+        
+        // 사용자 문서 삭제
+        const userRef = doc(db, 'users', uid);
+        await deleteDoc(userRef);
+        console.log('⚡️  [log] - AuthContext: 사용자 문서 삭제 완료');
+        
+        // 사용자 관련 다른 컬렉션들도 삭제 (예: 예약, 스케줄 등)
+        // 필요에 따라 추가 컬렉션들을 삭제할 수 있습니다
+        console.log('⚡️  [log] - AuthContext: Firestore 데이터 삭제 완료');
+        
+      } catch (firestoreError) {
+        console.error('⚡️  [error] - AuthContext: Firestore 데이터 삭제 실패:', firestoreError);
+        // Firestore 삭제 실패해도 계정 삭제는 계속 진행
+      }
+      
+      // 2. Firebase Auth에서 계정 삭제
+      try {
+        console.log('⚡️  [log] - AuthContext: Firebase Auth 계정 삭제 시작...');
+        
+        if (auth.currentUser) {
+          await auth.currentUser.delete();
+          console.log('⚡️  [log] - AuthContext: Firebase Auth 계정 삭제 완료');
+        } else {
+          console.warn('⚡️  [warn] - AuthContext: Firebase Auth currentUser가 없음');
+        }
+        
+      } catch (authError) {
+        console.error('⚡️  [error] - AuthContext: Firebase Auth 계정 삭제 실패:', authError);
+        
+        // 인증이 필요한 경우 재인증 후 삭제 시도
+        if (authError.code === 'auth/requires-recent-login') {
+          throw new Error('보안을 위해 다시 로그인한 후 탈퇴해주세요.');
+        }
+        
+        throw new Error(`계정 삭제 실패: ${authError.message}`);
+      }
+      
+      // 3. 네이티브 플랫폼에서 계정 삭제
+      if (Capacitor.isNativePlatform()) {
+        const platform = Capacitor.getPlatform();
+        console.log('⚡️  [log] - AuthContext: 네이티브 플랫폼 계정 삭제:', platform);
+        
+        if (platform === 'android') {
+          // Android에서 Google 계정 연결 해제
+          try {
+            if (window.GoogleSignInPlugin && window.GoogleSignInPlugin.revokeAccess) {
+              // 네이티브 Google 계정 연결 해제 사용
+              window.GoogleSignInPlugin.revokeAccess();
+              console.log('⚡️  [log] - AuthContext: Android 네이티브 Google 계정 연결 해제 시작');
+              
+              // 연결 해제 완료 이벤트 대기
+              const handleRevokeSuccess = () => {
+                console.log('⚡️  [log] - AuthContext: Android 네이티브 Google 계정 연결 해제 완료');
+                window.removeEventListener('googleRevokeSuccess', handleRevokeSuccess);
+                window.removeEventListener('googleRevokeError', handleRevokeError);
+              };
+              
+              const handleRevokeError = (event) => {
+                console.error('⚡️  [error] - AuthContext: Android 네이티브 Google 계정 연결 해제 실패:', event.detail);
+                window.removeEventListener('googleRevokeSuccess', handleRevokeSuccess);
+                window.removeEventListener('googleRevokeError', handleRevokeError);
+              };
+              
+              window.addEventListener('googleRevokeSuccess', handleRevokeSuccess);
+              window.addEventListener('googleRevokeError', handleRevokeError);
+              
+              // 타임아웃 설정 (10초)
+              setTimeout(() => {
+                window.removeEventListener('googleRevokeSuccess', handleRevokeSuccess);
+                window.removeEventListener('googleRevokeError', handleRevokeError);
+                console.log('⚡️  [log] - AuthContext: Android 네이티브 Google 계정 연결 해제 타임아웃');
+              }, 10000);
+              
+            } else {
+              console.warn('⚡️  [warn] - AuthContext: Android Google 계정 연결 해제 기능을 사용할 수 없음');
+            }
+          } catch (e) {
+            console.warn('⚡️  [warn] - AuthContext: Android Google 계정 연결 해제 실패:', e);
+          }
+        } else if (platform === 'ios') {
+          // iOS에서 Apple 계정 연결 해제
+          try {
+            if (window.AppleSignInPlugin && window.AppleSignInPlugin.revokeAccess) {
+              window.AppleSignInPlugin.revokeAccess();
+              console.log('⚡️  [log] - AuthContext: iOS Apple 계정 연결 해제 완료');
+            }
+          } catch (e) {
+            console.warn('⚡️  [warn] - AuthContext: iOS Apple 계정 연결 해제 실패:', e);
+          }
+        }
+      }
+      
+      // 4. 로컬 상태 완전 초기화
+      setCurrentUser(null);
+      
+      // 5. 모든 로컬 데이터 정리
+      try {
+        sessionStorage.clear();
+        localStorage.clear();
+        console.log('⚡️  [log] - AuthContext: 로컬 데이터 정리 완료');
+      } catch (e) {
+        console.warn('⚡️  [warn] - AuthContext: 로컬 데이터 정리 실패:', e);
+      }
+      
+      console.log('⚡️  [log] - AuthContext: 회원탈퇴 완료');
+      return true;
+      
+    } catch (error) {
+      console.error('⚡️  [error] - AuthContext: 회원탈퇴 실패:', error);
+      
+      // 에러가 발생해도 로컬 상태는 초기화
+      setCurrentUser(null);
+      try {
+        sessionStorage.clear();
+        localStorage.clear();
+      } catch (e) {
+        console.warn('⚡️  [warn] - AuthContext: 강제 정리 중 에러:', e);
+      }
+      
+      throw error;
+    }
+  };
+
   // 인증 상태 초기화
   useEffect(() => {
     const initializeFirebase = async () => {
@@ -1126,6 +1352,7 @@ export const AuthProvider = ({ children }) => {
     // loginWithEmail,
     // registerWithEmail,
     logout,
+    deleteAccount,
     updateUserType,
     updateUserPreferences,
     getUserData,

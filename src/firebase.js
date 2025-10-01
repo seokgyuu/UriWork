@@ -8,13 +8,13 @@ console.log('⚡️  [firebase.js] Firebase 모듈 로드 시작...');
 
 // 환경변수에서 Firebase 설정 가져오기
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAWVfGZ3ANf2SptLDFNqdbWmyKJdaIa64E",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBj7JGwh7aFCjYEDOB9m4Zd6a6R42LY5Kk",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "calendar-8e1a2.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "calendar-8e1a2",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "calendar-8e1a2.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1014872932714",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1014872932714:web:906317cac136f19973a513",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-YSZZGVWCD"
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-YSZZGVW7CD"
 };
 
 // 환경변수 상태 로깅

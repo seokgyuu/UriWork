@@ -28,7 +28,7 @@ public class MainActivity extends BridgeActivity {
         
         // Google Sign-In 옵션 구성
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("1014872932714-t5qnkoa0dthrn8gobou9534bq77dii4i.apps.googleusercontent.com")
+                .requestIdToken("1014872932714-c9qa7jh4lhug36vkegild3cvofk4ruj7.apps.googleusercontent.com")
                 .requestEmail()
                 .build();
         
@@ -142,14 +142,68 @@ public class MainActivity extends BridgeActivity {
             });
     }
     
-    // JavaScript 인터페이스 클래스
-    public class GoogleSignInInterface {
-        @JavascriptInterface
-        public void googleSignIn() {
-            runOnUiThread(() -> {
-                android.content.Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-                startActivityForResult(signInIntent, RC_SIGN_IN);
-            });
-        }
-    }
+           // JavaScript 인터페이스 클래스
+           public class GoogleSignInInterface {
+               @JavascriptInterface
+               public void googleSignIn() {
+                   runOnUiThread(() -> {
+                       android.content.Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+                       startActivityForResult(signInIntent, RC_SIGN_IN);
+                   });
+               }
+               
+               @JavascriptInterface
+               public void googleSignOut() {
+                   runOnUiThread(() -> {
+                       mGoogleSignInClient.signOut().addOnCompleteListener(MainActivity.this, task -> {
+                           Log.d("GoogleSignIn", "Google sign out completed");
+                           
+                           // Firebase Auth 로그아웃
+                           mAuth.signOut();
+                           
+                           // JavaScript로 로그아웃 완료 알림
+                           bridge.getWebView().evaluateJavascript(
+                               "window.dispatchEvent(new CustomEvent('googleSignOutSuccess'));", 
+                               null
+                           );
+                       });
+                   });
+               }
+               
+               @JavascriptInterface
+               public void revokeAccess() {
+                   runOnUiThread(() -> {
+                       mGoogleSignInClient.revokeAccess().addOnCompleteListener(MainActivity.this, task -> {
+                           if (task.isSuccessful()) {
+                               Log.d("GoogleSignIn", "Google access revoked successfully");
+                               
+                               // Firebase Auth 계정 삭제
+                               if (mAuth.getCurrentUser() != null) {
+                                   mAuth.getCurrentUser().delete().addOnCompleteListener(deleteTask -> {
+                                       if (deleteTask.isSuccessful()) {
+                                           Log.d("GoogleSignIn", "Firebase account deleted successfully");
+                                       } else {
+                                           Log.e("GoogleSignIn", "Firebase account deletion failed", deleteTask.getException());
+                                       }
+                                   });
+                               }
+                               
+                               // JavaScript로 계정 삭제 완료 알림
+                               bridge.getWebView().evaluateJavascript(
+                                   "window.dispatchEvent(new CustomEvent('googleRevokeSuccess'));", 
+                                   null
+                               );
+                           } else {
+                               Log.e("GoogleSignIn", "Google access revocation failed", task.getException());
+                               
+                               // JavaScript로 에러 알림
+                               bridge.getWebView().evaluateJavascript(
+                                   "window.dispatchEvent(new CustomEvent('googleRevokeError', {detail: {message: 'Google 계정 연결 해제에 실패했습니다.'}}));", 
+                                   null
+                               );
+                           }
+                       });
+                   });
+               }
+           }
 }

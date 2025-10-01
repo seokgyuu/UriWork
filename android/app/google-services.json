@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "1014872932714-c9qa7jh4lhug36vkegild3cvofk4ruj7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hass.uriwork",
+            "certificate_hash": "d01709e6d2fd340c14de83446f7c7a7e7ff33091"
+          }
+        },
+        {
+          "client_id": "1014872932714-r5tdj8tibin2f2i5g7jv8260h245ga7l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hass.uriwork",
+            "certificate_hash": "2184e8091838adb0e16bc6b3c1a9a4373516e145"
+          }
+        },
+        {
           "client_id": "1014872932714-rrsioa7adkbpfhh9ki2rtick39ecfgq5.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -42,7 +58,7 @@
               "client_id": "1014872932714-31m6cnh3daqfbef6eqjajggsmrkcms81.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.hass.calendar",
+                "bundle_id": "com.hass.uriwork",
                 "app_store_id": "6751185385"
               }
             }
