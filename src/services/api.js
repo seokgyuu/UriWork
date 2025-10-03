@@ -10,6 +10,13 @@ import { auth } from '../firebase';
 
 // 환경에 따른 API URL 설정
 const getApiBaseUrl = () => {
+  // 환경 변수에서 API URL 가져오기
+  const envApiUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envApiUrl) {
+    console.log('🌐 환경 변수에서 API URL 사용:', envApiUrl);
+    return envApiUrl;
+  }
+  
   // 개발 환경 (로컬)
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:8001';
@@ -20,8 +27,16 @@ const getApiBaseUrl = () => {
     return 'http://localhost:8001';
   }
   
-  // 프로덕션 환경 (실제 배포)
-  // 여기에 실제 배포된 백엔드 서버 URL을 입력
+  // iOS 실제 디바이스 (개발용) - MacBook의 IP 주소 사용
+  if (window.location.hostname.includes('ionic') || window.location.hostname.includes('capacitor')) {
+    // 환경 변수에서 IP 주소 가져오기 (없으면 기본값 사용)
+    const devServerIP = import.meta.env.VITE_DEV_SERVER_IP || '192.168.1.100';
+    console.log('📱 iOS 디바이스 감지, 개발 서버 IP:', devServerIP);
+    return `http://${devServerIP}:8001`;
+  }
+  
+  // 프로덕션 환경 (TestFlight, 실제 배포)
+  // 실제 배포된 백엔드 서버 URL
   return 'https://your-backend-server.com'; // 실제 배포 URL로 변경 필요
 };
 
@@ -39,35 +54,72 @@ const api = axios.create({
 // 요청 인터셉터 - 토큰 추가 (개발 모드에서는 더미 토큰 사용)
 api.interceptors.request.use(
   async (config) => {
+    console.log('🌐 API 요청 시작:', {
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      method: config.method,
+      hostname: window.location.hostname
+    });
+    
     const user = auth.currentUser;
     if (user) {
       try {
         const token = await user.getIdToken();
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('✅ Firebase 토큰 사용:', token.substring(0, 20) + '...');
       } catch (error) {
         // 개발 모드에서는 더미 토큰 사용
-        console.log('Firebase 토큰 가져오기 실패, 개발 모드로 실행');
+        console.log('⚠️ Firebase 토큰 가져오기 실패, 개발 모드로 실행:', error.message);
         config.headers.Authorization = `Bearer dev_token_123`;
       }
     } else {
       // 사용자가 없어도 개발 모드에서는 더미 토큰 사용
+      console.log('⚠️ 사용자 없음, 개발 모드 토큰 사용');
       config.headers.Authorization = `Bearer dev_token_123`;
     }
+    
+    console.log('📤 최종 요청 헤더:', config.headers);
     return config;
   },
   (error) => {
+    console.error('❌ 요청 인터셉터 오류:', error);
     return Promise.reject(error);
   }
 );
 
 // 응답 인터셉터 - 에러 처리
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('✅ API 응답 성공:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
   (error) => {
+    console.error('❌ API 응답 오류:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      fullURL: error.config ? `${error.config.baseURL}${error.config.url}` : 'unknown',
+      responseData: error.response?.data,
+      requestData: error.config?.data
+    });
+    
     if (error.response?.status === 401) {
       // 인증 에러 처리
-      console.log('인증 에러');
+      console.log('🔐 인증 에러 - 토큰이 유효하지 않습니다');
+    } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+      console.log('🌐 네트워크 오류 - 서버에 연결할 수 없습니다');
+    } else if (error.code === 'ECONNREFUSED') {
+      console.log('🔌 연결 거부 - 백엔드 서버가 실행 중인지 확인하세요');
     }
+    
     return Promise.reject(error);
   }
 );

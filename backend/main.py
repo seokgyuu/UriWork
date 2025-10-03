@@ -124,7 +124,42 @@ app = FastAPI(title="캘린더 예약 시스템 API")
 # 헬스 체크 엔드포인트
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "message": "서버가 정상적으로 실행 중입니다."}
+    """프로덕션용 헬스체크 엔드포인트"""
+    import psutil
+    import time
+    
+    try:
+        # 시스템 리소스 체크
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        # Firebase 연결 체크
+        firebase_status = "connected" if db is not None else "disconnected"
+        
+        # OpenAI API 체크
+        openai_status = "configured" if openai.api_key else "not_configured"
+        
+        return {
+            "status": "healthy",
+            "timestamp": time.time(),
+            "environment": ENVIRONMENT,
+            "system": {
+                "cpu_percent": cpu_percent,
+                "memory_percent": memory.percent,
+                "disk_percent": disk.percent
+            },
+            "services": {
+                "firebase": firebase_status,
+                "openai": openai_status
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": time.time()
+        }
 
 # CORS 설정 (환경에 따라 다르게)
 if ENVIRONMENT == "production":
