@@ -1,0 +1,11 @@
+# Lambda용 requirements.txt
+fastapi==0.104.1
+mangum==0.17.0
+firebase-admin==6.2.0
+openai==0.28.1
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.0
+cryptography==41.0.7
+psutil==5.9.6

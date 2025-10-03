@@ -1,0 +1,25 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    build:
+      - pip install -r requirements.txt
+run:
+  command: python main.py
+  network:
+    port: 8000
+  env:
+    - name: ENVIRONMENT
+      value: production
+    - name: OPENAI_API_KEY
+      value: "your_openai_api_key_here"
+    - name: FIREBASE_PROJECT_ID
+      value: "calendar-8e1a2"
+    - name: FIREBASE_PRIVATE_KEY
+      value: "-----BEGIN PRIVATE KEY-----\nyour_private_key_here\n-----END PRIVATE KEY-----"
+    - name: FIREBASE_CLIENT_EMAIL
+      value: "your_service_account_email@your_project.iam.gserviceaccount.com"
+    - name: SECRET_KEY
+      value: "your-super-secret-jwt-key-for-calendar-app-2024"
+    - name: ALLOWED_ORIGINS
+      value: '["*"]'
