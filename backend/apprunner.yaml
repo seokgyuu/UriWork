@@ -6,7 +6,7 @@ build:
       - echo "Installing dependencies..."
       - pip install -r requirements.txt
 run:
-  runtime-version: 3.11.0
+  runtime-version: 3.9
   command: gunicorn main:app --host 0.0.0.0 --port 8000 --workers 2 --worker-class uvicorn.workers.UvicornWorker
   network:
     port: 8000
