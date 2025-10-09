@@ -68,8 +68,12 @@ async def health_check():
 if ENVIRONMENT == "production":
     # 프로덕션 환경: 실제 도메인만 허용
     allowed_origins = [
-        "https://your-app-domain.com",  # 실제 앱 도메인으로 변경
-        "https://your-backend-domain.com"  # 실제 백엔드 도메인으로 변경
+        "http://52.78.180.64:8000",  # EC2 서버 자체
+        "http://localhost:5173",      # 로컬 개발 서버
+        "http://localhost:3000",      # 로컬 개발 서버
+        "capacitor://localhost",      # Capacitor 앱
+        "ionic://localhost",          # Ionic 앱
+        "*"  # 임시로 모든 origin 허용 (보안상 나중에 제한 필요)
     ]
 else:
     # 개발 환경: 로컬 주소들 허용

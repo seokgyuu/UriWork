@@ -37,7 +37,7 @@ const getApiBaseUrl = () => {
   
   // 프로덕션 환경 (TestFlight, 실제 배포)
   // 실제 배포된 백엔드 서버 URL
-  return 'https://your-backend-server.com'; // 실제 배포 URL로 변경 필요
+  return 'http://52.78.180.64:8000'; // EC2 서버 URL
 };
 
 const API_BASE_URL = getApiBaseUrl();
