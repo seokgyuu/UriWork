@@ -58,6 +58,16 @@ async def root():
         "environment": ENVIRONMENT
     }
 
+# 테스트 엔드포인트
+@app.get("/test")
+async def test():
+    """테스트 엔드포인트"""
+    return {
+        "message": "API가 정상적으로 작동합니다!",
+        "timestamp": "2024-01-01T00:00:00Z",
+        "environment": ENVIRONMENT
+    }
+
 # 라우터들 import 및 등록 (점진적으로 추가)
 try:
     from auth import router as auth_router
