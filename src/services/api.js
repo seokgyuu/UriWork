@@ -36,7 +36,7 @@ const getApiBaseUrl = () => {
   }
   
   // 프로덕션 환경 (TestFlight, 실제 배포)
-  // Cloud Run 서버 URL
+  // Cloud Run 서버 URL (실제 URL로 교체 필요)
   const cloudRunUrl = import.meta.env.VITE_CLOUD_RUN_URL || 'https://uriwork-fastapi-00007-nmb-1014872932714-compute@developer.gserviceaccount.com.a.run.app';
   console.log('☁️ Cloud Run URL 사용:', cloudRunUrl);
   return cloudRunUrl;
