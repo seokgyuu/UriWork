@@ -68,45 +68,20 @@ async def test():
         "environment": ENVIRONMENT
     }
 
-# 라우터들 import 및 등록 (점진적으로 추가)
-try:
-    from auth import router as auth_router
-    app.include_router(auth_router)
-    print("✅ Auth router loaded")
-except ImportError as e:
-    print(f"⚠️ Auth router not loaded: {e}")
+# 라우터들 import 및 등록
+from auth import router as auth_router
+from business import router as business_router
+from worker import router as worker_router
+from booking import router as booking_router
+from chatbot import router as chatbot_router
+from ai_schedule import router as ai_schedule_router
 
-try:
-    from business import router as business_router
-    app.include_router(business_router)
-    print("✅ Business router loaded")
-except ImportError as e:
-    print(f"⚠️ Business router not loaded: {e}")
+# 라우터들 등록
+app.include_router(auth_router)
+app.include_router(business_router)
+app.include_router(worker_router)
+app.include_router(booking_router)
+app.include_router(chatbot_router)
+app.include_router(ai_schedule_router)
 
-try:
-    from worker import router as worker_router
-    app.include_router(worker_router)
-    print("✅ Worker router loaded")
-except ImportError as e:
-    print(f"⚠️ Worker router not loaded: {e}")
-
-try:
-    from booking import router as booking_router
-    app.include_router(booking_router)
-    print("✅ Booking router loaded")
-except ImportError as e:
-    print(f"⚠️ Booking router not loaded: {e}")
-
-try:
-    from chatbot import router as chatbot_router
-    app.include_router(chatbot_router)
-    print("✅ Chatbot router loaded")
-except ImportError as e:
-    print(f"⚠️ Chatbot router not loaded: {e}")
-
-try:
-    from ai_schedule import router as ai_schedule_router
-    app.include_router(ai_schedule_router)
-    print("✅ AI Schedule router loaded")
-except ImportError as e:
-    print(f"⚠️ AI Schedule router not loaded: {e}")
+print("✅ 모든 라우터가 성공적으로 로드되었습니다!")
