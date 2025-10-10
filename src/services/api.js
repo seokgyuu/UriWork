@@ -36,13 +36,21 @@ const getApiBaseUrl = () => {
   }
   
   // 프로덕션 환경 (TestFlight, 실제 배포)
-  // Cloud Run 서버 URL (실제 URL로 교체 필요)
-  const cloudRunUrl = import.meta.env.VITE_CLOUD_RUN_URL || 'https://uriwork-fastapi-00007-nmb-1014872932714-compute@developer.gserviceaccount.com.a.run.app';
+  // Cloud Run 서버 URL (올바른 URL 사용)
+  const cloudRunUrl = import.meta.env.VITE_CLOUD_RUN_URL || 'https://uriwork-fastapi-1014872932714.asia-northeast3.run.app';
   console.log('☁️ Cloud Run URL 사용:', cloudRunUrl);
   return cloudRunUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
+
+// 디버깅을 위한 로그
+console.log('🔍 API 설정 정보:', {
+  hostname: window.location.hostname,
+  apiBaseUrl: API_BASE_URL,
+  environment: import.meta.env.MODE,
+  viteCloudRunUrl: import.meta.env.VITE_CLOUD_RUN_URL
+});
 
 // Axios 인스턴스 생성
 const api = axios.create({
