@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timedelta
 import uuid
 import re
-from .utils import get_current_user, call_openai_api
+from utils import get_current_user, call_openai_api
 
 router = APIRouter(prefix="/chatbot", tags=["챗봇"])
 
@@ -116,7 +116,7 @@ async def create_chatbot_booking(booking_data: dict, current_user: dict = Depend
             "created_at": datetime.now().isoformat()
         }
         
-        from .utils import db
+        from utils import db
         db.collection("chatbot_bookings").document(booking_id).set(booking)
         
         return {"message": "예약이 생성되었습니다", "booking_id": booking_id}
@@ -138,7 +138,7 @@ async def generate_chatbot_schedule(schedule_request: dict, current_user: dict =
             "created_at": datetime.now().isoformat()
         }
         
-        from .utils import db
+        from utils import db
         schedule_id = str(uuid.uuid4())
         db.collection("chatbot_schedules").document(schedule_id).set(schedule)
         
@@ -184,7 +184,7 @@ async def edit_schedule_with_ai(edit_request: dict, current_user: dict = Depends
             # AI 응답을 파싱하여 수정된 스케줄 생성
             # 실제 구현에서는 더 정교한 파싱이 필요합니다.
             
-            from .utils import db
+            from utils import db
             # 수정된 스케줄을 데이터베이스에 저장
             updated_schedule = {
                 **current_schedule,

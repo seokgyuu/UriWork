@@ -7,7 +7,7 @@ Firebase Authentication, Firestore 데이터베이스 연동
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .utils import load_environment, setup_openai, initialize_firebase, ENVIRONMENT
+from utils import load_environment, setup_openai, initialize_firebase, ENVIRONMENT
 
 # 환경변수 로드
 load_environment()
@@ -19,7 +19,7 @@ setup_openai()
 db = initialize_firebase()
 
 # 전역 db 변수 설정
-from .utils import set_db
+from utils import set_db
 set_db(db)
 
 # FastAPI 앱 생성
@@ -97,12 +97,12 @@ app.add_middleware(
 )
 
 # 라우터들 import 및 등록
-from .auth import router as auth_router
-from .business import router as business_router
-from .worker import router as worker_router
-from .booking import router as booking_router
-from .chatbot import router as chatbot_router
-from .ai_schedule import router as ai_schedule_router
+from auth import router as auth_router
+from business import router as business_router
+from worker import router as worker_router
+from booking import router as booking_router
+from chatbot import router as chatbot_router
+from ai_schedule import router as ai_schedule_router
 
 # 라우터들 등록
 app.include_router(auth_router)
@@ -116,5 +116,5 @@ app.include_router(ai_schedule_router)
 # 서버 실행
 if __name__ == "__main__":
     import uvicorn
-    from .utils import HOST, PORT
+    from utils import HOST, PORT
     uvicorn.run(app, host=HOST, port=PORT)

@@ -8,8 +8,8 @@ from datetime import datetime
 import uuid
 import time
 from typing import Optional
-from .models import AIScheduleRequest, GeneratedSchedule
-from .utils import get_current_user, call_openai_api
+from models import AIScheduleRequest, GeneratedSchedule
+from utils import get_current_user, call_openai_api
 
 router = APIRouter(prefix="/ai/schedule", tags=["AI 스케줄"])
 
@@ -70,7 +70,7 @@ async def generate_ai_schedule_for_employer_dev(schedule_request: AIScheduleRequ
         schedule_data["total_hours"] = total_hours
         
         # 데이터베이스에 저장
-        from .utils import db
+        from utils import db
         if db:
             db.collection("ai_schedules").document(schedule_id).set(schedule_data)
         
@@ -173,7 +173,7 @@ async def generate_ai_schedule_for_employer(schedule_request: AIScheduleRequest,
                 schedule_data["schedule_data"][employee.worker_id] = employee_schedule
             
             # 데이터베이스에 저장
-            from .utils import db
+            from utils import db
             if db:
                 db.collection("ai_schedules").document(schedule_id).set(schedule_data)
             
@@ -198,7 +198,7 @@ async def get_generated_schedule(schedule_id: str, current_user: dict = Depends(
     try:
         print(f"스케줄 조회 요청: {schedule_id}, 사용자: {current_user['uid']}")
         
-        from .utils import db
+        from utils import db
         if not db:
             raise HTTPException(status_code=500, detail="데이터베이스 연결이 필요합니다")
         
@@ -230,7 +230,7 @@ async def get_generated_schedules(business_id: str, current_user: dict = Depends
         if current_user["uid"] != business_id:
             raise HTTPException(status_code=403, detail="권한이 없습니다")
         
-        from .utils import db
+        from utils import db
         if not db:
             raise HTTPException(status_code=500, detail="데이터베이스 연결이 필요합니다")
         

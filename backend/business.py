@@ -6,11 +6,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timedelta
 import uuid
-from .models import (
+from models import (
     BusinessCategory, Department, WorkField, WorkSchedule, 
     Business, CalendarPermission, SubscriptionCreate
 )
-from .utils import get_current_user
+from utils import get_current_user
 
 router = APIRouter(prefix="/business", tags=["비즈니스"])
 
@@ -39,7 +39,7 @@ async def create_business_calendar(current_user: dict = Depends(get_current_user
             }
         }
         
-        from .utils import db
+        from utils import db
         db.collection("calendars").document(business_id).set(calendar_data)
         return {"message": "캘린더가 생성되었습니다", "calendar_id": business_id}
     except Exception as e:
@@ -61,7 +61,7 @@ async def generate_worker_code(current_user: dict = Depends(get_current_user)):
             "used": False
         }
         
-        from .utils import db
+        from utils import db
         db.collection("worker_codes").document(code).set(code_data)
         return {"code": code, "expires_at": code_data["expires_at"]}
     except Exception as e:
@@ -84,7 +84,7 @@ async def create_business_category(category: BusinessCategory, current_user: dic
             "created_at": datetime.now().isoformat()
         }
         
-        from .utils import db
+        from utils import db
         db.collection("business_categories").document(category_id).set(category_data)
         return {"message": "업종이 생성되었습니다", "category_id": category_id}
     except Exception as e:
@@ -108,7 +108,7 @@ async def create_department(department: Department, current_user: dict = Depends
             "created_at": datetime.now().isoformat()
         }
         
-        from .utils import db
+        from utils import db
         db.collection("departments").document(department_id).set(department_data)
         return {"message": "파트가 생성되었습니다", "department_id": department_id}
     except Exception as e:
@@ -131,7 +131,7 @@ async def create_work_field(work_field: WorkField, current_user: dict = Depends(
             "created_at": datetime.now().isoformat()
         }
         
-        from .utils import db
+        from utils import db
         db.collection("work_fields").document(field_id).set(field_data)
         return {"message": "주요분야가 생성되었습니다", "field_id": field_id}
     except Exception as e:
@@ -155,7 +155,7 @@ async def create_schedule_settings(schedule: WorkSchedule, current_user: dict = 
             "updated_at": datetime.now().isoformat()
         }
         
-        from .utils import db
+        from utils import db
         db.collection("work_schedules").document(schedule.business_id).set(schedule_data)
         return {"message": "스케줄 설정이 저장되었습니다"}
     except Exception as e:
@@ -175,7 +175,7 @@ async def create_subscription(subscription: SubscriptionCreate, current_user: di
             "status": "active"
         }
         
-        from .utils import db
+        from utils import db
         db.collection("subscriptions").document(subscription_id).set(subscription_data)
         return {"message": "구독이 생성되었습니다", "subscription_id": subscription_id}
     except Exception as e:

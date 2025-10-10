@@ -6,8 +6,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 import uuid
-from .models import BookingCreate
-from .utils import get_current_user
+from models import BookingCreate
+from utils import get_current_user
 
 router = APIRouter(prefix="/booking", tags=["예약"])
 
@@ -30,7 +30,7 @@ async def create_booking(booking: BookingCreate, current_user: dict = Depends(ge
             "created_at": datetime.now().isoformat()
         }
         
-        from .utils import db
+        from utils import db
         db.collection("bookings").document(booking_id).set(booking_data)
         
         return {"message": "예약이 생성되었습니다", "booking_id": booking_id}
@@ -44,12 +44,12 @@ async def get_bookings(business_id: str, current_user: dict = Depends(get_curren
     try:
         # 권한 확인
         if current_user["uid"] != business_id:
-            from .utils import db
+            from utils import db
             permission_doc = db.collection("permissions").document(f"{business_id}_{current_user['uid']}").get()
             if not permission_doc.exists:
                 raise HTTPException(status_code=403, detail="권한이 없습니다")
         
-        from .utils import db
+        from utils import db
         bookings = db.collection("bookings").where("business_id", "==", business_id).stream()
         booking_list = [doc.to_dict() for doc in bookings]
         

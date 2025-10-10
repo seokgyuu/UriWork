@@ -6,8 +6,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from firebase_admin import auth
 from datetime import datetime
-from .models import UserCreate, UserLogin
-from .utils import get_current_user
+from models import UserCreate, UserLogin
+from utils import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["인증"])
 
@@ -24,7 +24,7 @@ async def register_user(user: UserCreate):
         )
         
         # Firestore에 사용자 정보 저장
-        from .utils import db
+        from utils import db
         user_data = {
             "uid": user_record.uid,
             "email": user.email,

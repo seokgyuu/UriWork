@@ -5,8 +5,8 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
-from .models import WorkerSchedule
-from .utils import get_current_user
+from models import WorkerSchedule
+from utils import get_current_user
 
 router = APIRouter(prefix="/worker", tags=["직원"])
 
@@ -18,7 +18,7 @@ async def use_worker_code(code: str, current_user: dict = Depends(get_current_us
         worker_id = current_user["uid"]
         
         # 코드 확인
-        from .utils import db
+        from utils import db
         code_doc = db.collection("worker_codes").document(code).get()
         if not code_doc.exists:
             raise HTTPException(status_code=404, detail="유효하지 않은 코드입니다")
@@ -69,7 +69,7 @@ async def set_worker_schedule_preferences(worker_schedule: WorkerSchedule, curre
             "updated_at": datetime.now().isoformat()
         }
         
-        from .utils import db
+        from utils import db
         doc_id = f"{worker_schedule.worker_id}_{worker_schedule.business_id}"
         db.collection("worker_schedules").document(doc_id).set(schedule_data)
         
@@ -90,7 +90,7 @@ async def get_worker_my_schedule(business_id: str, worker_id: str, current_user:
         if current_user["uid"] != worker_id:
             raise HTTPException(status_code=403, detail="본인의 스케줄만 조회할 수 있습니다")
         
-        from .utils import db
+        from utils import db
         # AI 생성된 스케줄에서 해당 직원의 스케줄 조회
         schedules = db.collection("ai_schedules").where("business_id", "==", business_id).stream()
         
@@ -124,7 +124,7 @@ async def get_worker_preference_schedule(business_id: str, worker_id: str, curre
         if current_user["uid"] != worker_id:
             raise HTTPException(status_code=403, detail="본인의 선호도만 조회할 수 있습니다")
         
-        from .utils import db
+        from utils import db
         # 직원의 선호도 조회
         doc_id = f"{worker_id}_{business_id}"
         preference_doc = db.collection("worker_schedules").document(doc_id).get()

@@ -18,6 +18,7 @@ COPY . .
 
 # 포트 설정 (Cloud Run은 PORT 환경변수 사용)
 ENV PORT=8080
+EXPOSE 8080
 
 # 애플리케이션 실행
 CMD exec gunicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --worker-class uvicorn.workers.UvicornWorker --timeout 0
