@@ -32,7 +32,7 @@ def load_environment():
 # 환경 설정
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", 8001))
+PORT = int(os.getenv("PORT", 8080))  # Cloud Run 기본 포트로 변경
 
 # OpenAI API 설정
 def setup_openai():
