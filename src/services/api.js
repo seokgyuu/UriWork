@@ -36,8 +36,10 @@ const getApiBaseUrl = () => {
   }
   
   // 프로덕션 환경 (TestFlight, 실제 배포)
-  // 실제 배포된 백엔드 서버 URL
-  return 'http://52.78.180.64:8000'; // EC2 서버 URL
+  // Cloud Run 서버 URL
+  const cloudRunUrl = import.meta.env.VITE_CLOUD_RUN_URL || 'https://uriwork-fastapi-00007-nmb-1014872932714-compute@developer.gserviceaccount.com.a.run.app';
+  console.log('☁️ Cloud Run URL 사용:', cloudRunUrl);
+  return cloudRunUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -116,8 +118,17 @@ api.interceptors.response.use(
       console.log('🔐 인증 에러 - 토큰이 유효하지 않습니다');
     } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
       console.log('🌐 네트워크 오류 - 서버에 연결할 수 없습니다');
+      console.log('💡 해결 방법:');
+      console.log('   1. 인터넷 연결 확인');
+      console.log('   2. Cloud Run 서비스 상태 확인');
+      console.log('   3. API URL 확인:', error.config?.baseURL);
     } else if (error.code === 'ECONNREFUSED') {
       console.log('🔌 연결 거부 - 백엔드 서버가 실행 중인지 확인하세요');
+    } else if (error.code === 'ENOTFOUND') {
+      console.log('🔍 DNS 오류 - 서버 주소를 찾을 수 없습니다');
+      console.log('💡 해결 방법: API URL을 확인하세요:', error.config?.baseURL);
+    } else if (error.code === 'CERT_HAS_EXPIRED' || error.message.includes('certificate')) {
+      console.log('🔒 SSL 인증서 오류 - HTTPS 연결 문제');
     }
     
     return Promise.reject(error);
