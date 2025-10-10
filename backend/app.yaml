@@ -1,0 +1,27 @@
+# Google App Engine용 설정 파일
+runtime: python311
+
+# 인스턴스 설정
+instance_class: F2
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+  target_cpu_utilization: 0.6
+
+# 환경 변수
+env_variables:
+  ENVIRONMENT: production
+  OPENAI_API_KEY: "your_openai_api_key"
+  FIREBASE_PROJECT_ID: "calendar-8e1a2"
+
+# 핸들러 설정
+handlers:
+- url: /.*
+  script: auto
+  secure: always
+
+# 리소스 설정
+resources:
+  cpu: 1
+  memory_gb: 0.5
+  disk_size_gb: 10
