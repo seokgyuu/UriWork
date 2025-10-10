@@ -1,9 +1,23 @@
-# Google Cloud Run용 최소 의존성
+# Google Cloud Run용 의존성
 # 웹 프레임워크
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 gunicorn==21.2.0
 
-# 기본 의존성
+# 데이터베이스 및 인증
+firebase-admin==6.2.0
 python-multipart==0.0.6
-python-dotenv==1.0.0 
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# AI 및 외부 API
+openai==0.28.1
+
+# 환경 설정
+python-dotenv==1.0.0
+
+# 보안
+cryptography==41.0.7
+
+# 헬스체크
+psutil==5.9.6 
