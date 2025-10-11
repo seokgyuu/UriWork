@@ -50,4 +50,6 @@ jobs:
           --max-instances 10 \
           --set-env-vars ENVIRONMENT=production \
           --set-env-vars OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-          --set-env-vars FIREBASE_PROJECT_ID="calendar-8e1a2"
+          --set-env-vars FIREBASE_PROJECT_ID="calendar-8e1a2" \
+          --set-env-vars VITE_API_BASE_URL="https://uriwork-fastapi-1014872932714.asia-northeast3.run.app" \
+          --set-env-vars VITE_CLOUD_RUN_URL="https://uriwork-fastapi-1014872932714.asia-northeast3.run.app"
