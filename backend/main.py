@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 # FastAPI 앱 생성
-app = FastAPI(title="캘린더 예약 시스템 API")
+app = FastAPI(title="Calendar Booking System API")
 
 # 환경 변수에서 설정 가져오기
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
@@ -52,7 +52,7 @@ async def health_check():
 async def root():
     """루트 엔드포인트"""
     return {
-        "message": "캘린더 예약 시스템 API",
+        "message": "Calendar Booking System API",
         "version": "1.0.0",
         "status": "running",
         "environment": ENVIRONMENT
