@@ -1392,10 +1392,15 @@ const EmployerScheduleGenerator = () => {
           const assignedWorkers = new Set();
           daySchedule.forEach(dept => {
             const workers = dept.assigned_employees || dept.employees || dept.worker_assignments || [];
-            workers.forEach(worker => {
-              const workerId = worker.worker_id || worker.employee_id || worker.id;
-              if (workerId) assignedWorkers.add(workerId);
-            });
+            // workers가 배열인지 확인 후 forEach 실행
+            if (Array.isArray(workers)) {
+              workers.forEach(worker => {
+                const workerId = worker.worker_id || worker.employee_id || worker.id;
+                if (workerId) assignedWorkers.add(workerId);
+              });
+            } else {
+              console.warn('workers가 배열이 아닙니다:', workers);
+            }
           });
           dailyAssignments[date] = Array.from(assignedWorkers);
         });
