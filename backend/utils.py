@@ -44,7 +44,7 @@ def setup_openai():
         print("💡 .env 파일 예시:")
         print("   OPENAI_API_KEY=your_api_key_here")
         print("   HOST=0.0.0.0")
-        print("   PORT=8001")
+        print("   PORT=8080")
     else:
         print("✅ OpenAI API 키가 설정되었습니다.")
 

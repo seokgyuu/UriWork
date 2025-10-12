@@ -19,12 +19,12 @@ const getApiBaseUrl = () => {
   
   // 개발 환경 (로컬)
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:8001';
+    return 'http://localhost:8080';
   }
   
   // iOS 시뮬레이터 (개발용)
   if (window.location.hostname.includes('capacitor')) {
-    return 'http://localhost:8001';
+    return 'http://localhost:8080';
   }
   
   // iOS 실제 디바이스 (개발용) - MacBook의 IP 주소 사용
@@ -32,7 +32,7 @@ const getApiBaseUrl = () => {
     // 환경 변수에서 IP 주소 가져오기 (없으면 기본값 사용)
     const devServerIP = import.meta.env.VITE_DEV_SERVER_IP || '192.168.1.100';
     console.log('📱 iOS 디바이스 감지, 개발 서버 IP:', devServerIP);
-    return `http://${devServerIP}:8001`;
+    return `http://${devServerIP}:8080`;
   }
   
   // 프로덕션 환경 (TestFlight, 실제 배포)
