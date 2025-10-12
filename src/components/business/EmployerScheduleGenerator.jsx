@@ -531,7 +531,25 @@ const EmployerScheduleGenerator = () => {
       }
 
       // 직원 선호도를 AI 스케줄 생성에 맞는 형태로 변환 (확정된 결근 제외)
-      const employeePrefs = employeePreferences.map(pref => {
+      const employeePrefs = employeePreferences
+        .filter(pref => {
+          // 활성 직원만 포함 (회원 탈퇴한 직원 제외)
+          const workerId = pref.employee_id || pref.worker_id || pref.id;
+          if (!workerId) {
+            console.warn('직원 ID가 없는 선호도 제외:', pref);
+            return false;
+          }
+          
+          // 직원이 활성 상태인지 확인 (추가 검증 로직)
+          const isActiveEmployee = userNames[workerId] && userNames[workerId] !== 'Unknown User';
+          if (!isActiveEmployee) {
+            console.warn(`비활성 직원 제외: ${workerId} (${userNames[workerId] || 'Unknown'})`);
+            return false;
+          }
+          
+          return true;
+        })
+        .map(pref => {
         // 직원의 선호도 데이터 분석
         const dailyPreferences = pref.daily_preferences || {};
         const preferredDays = Object.keys(dailyPreferences).filter(day => 
