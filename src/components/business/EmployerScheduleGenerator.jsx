@@ -1101,9 +1101,17 @@ const EmployerScheduleGenerator = () => {
       
       const response = await employerScheduleAPI.generateSchedule(aiScheduleRequest);
       console.log('AI 스케줄 생성 성공:', response.data);
-       console.log('AI 스케줄 생성 - 전체 응답 구조:', response);
-       console.log('AI 스케줄 생성 - response.data 타입:', typeof response.data);
-       console.log('AI 스케줄 생성 - response.data 키들:', Object.keys(response.data || {}));
+      console.log('AI 스케줄 생성 - 전체 응답 구조:', response);
+      console.log('AI 스케줄 생성 - response.data 타입:', typeof response.data);
+      console.log('AI 스케줄 생성 - response.data 키들:', Object.keys(response.data || {}));
+      
+      // 백엔드 응답에서 schedule_id 추출
+      const scheduleId = response.data?.schedule_id;
+      if (scheduleId) {
+        console.log('✅ 생성된 스케줄 ID:', scheduleId);
+      } else {
+        console.error('❌ 스케줄 ID를 받지 못했습니다:', response.data);
+      }
       
       // 백엔드 응답 구조 상세 분석
       console.log('🔍 백엔드 응답 상세 분석:');
