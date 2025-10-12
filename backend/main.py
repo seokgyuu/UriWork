@@ -69,19 +69,23 @@ async def test():
     }
 
 # 라우터들 import 및 등록
-from auth import router as auth_router
-from business import router as business_router
-from worker import router as worker_router
-from booking import router as booking_router
-from chatbot import router as chatbot_router
-from ai_schedule import router as ai_schedule_router
+try:
+    from auth import router as auth_router
+    from business import router as business_router
+    from worker import router as worker_router
+    from booking import router as booking_router
+    from chatbot import router as chatbot_router
+    from ai_schedule import router as ai_schedule_router
 
-# 라우터들 등록
-app.include_router(auth_router)
-app.include_router(business_router)
-app.include_router(worker_router)
-app.include_router(booking_router)
-app.include_router(chatbot_router)
-app.include_router(ai_schedule_router)
+    # 라우터들 등록
+    app.include_router(auth_router)
+    app.include_router(business_router)
+    app.include_router(worker_router)
+    app.include_router(booking_router)
+    app.include_router(chatbot_router)
+    app.include_router(ai_schedule_router)
 
-print("✅ 모든 라우터가 성공적으로 로드되었습니다!")
+    print("✅ 모든 라우터가 성공적으로 로드되었습니다!")
+except Exception as e:
+    print(f"❌ 라우터 로딩 실패: {e}")
+    print("기본 엔드포인트만 사용합니다.")
