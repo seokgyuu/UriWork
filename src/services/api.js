@@ -10,35 +10,29 @@ import { auth } from '../firebase';
 
 // 환경에 따른 API URL 설정
 const getApiBaseUrl = () => {
-  // 환경 변수에서 API URL 가져오기
+  // 환경 변수에서 API URL 가져오기 (최우선)
   const envApiUrl = import.meta.env.VITE_API_BASE_URL;
   if (envApiUrl) {
     console.log('🌐 환경 변수에서 API URL 사용:', envApiUrl);
     return envApiUrl;
   }
   
-  // 개발 환경 (로컬)
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:8080';
-  }
-  
-  // iOS 시뮬레이터 (개발용)
-  if (window.location.hostname.includes('capacitor')) {
-    return 'http://localhost:8080';
-  }
-  
-  // iOS 실제 디바이스 (개발용) - MacBook의 IP 주소 사용
-  if (window.location.hostname.includes('ionic') || window.location.hostname.includes('capacitor')) {
-    // 환경 변수에서 IP 주소 가져오기 (없으면 기본값 사용)
-    const devServerIP = import.meta.env.VITE_DEV_SERVER_IP || '192.168.1.100';
-    console.log('📱 iOS 디바이스 감지, 개발 서버 IP:', devServerIP);
-    return `http://${devServerIP}:8080`;
-  }
-  
-  // 프로덕션 환경 (TestFlight, 실제 배포)
-  // Cloud Run 서버 URL (올바른 URL 사용)
+  // 프로덕션 환경 (TestFlight, 실제 배포) - 기본값으로 Cloud Run 사용
   const cloudRunUrl = import.meta.env.VITE_CLOUD_RUN_URL || 'https://uriwork-fastapi-1014872932714.asia-northeast3.run.app';
-  console.log('☁️ Cloud Run URL 사용:', cloudRunUrl);
+  
+  // 개발 환경에서만 로컬 서버 사용 (명시적으로 개발 모드일 때만)
+  const isDevelopment = import.meta.env.MODE === 'development' && 
+                       (window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.hostname.includes('capacitor'));
+  
+  if (isDevelopment) {
+    console.log('🔧 개발 모드: 로컬 서버 사용');
+    return 'http://localhost:8080';
+  }
+  
+  // 기본값: Cloud Run 서버 (프로덕션)
+  console.log('☁️ 프로덕션 모드: Cloud Run URL 사용:', cloudRunUrl);
   return cloudRunUrl;
 };
 
